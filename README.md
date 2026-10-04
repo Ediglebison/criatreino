@@ -74,7 +74,8 @@ npm run db:generate  # regenera o Prisma Client (src/generated/prisma)
 npm run db:migrate   # cria/aplica migrações (prisma migrate dev)
 npm run db:seed      # seed: exercícios + usuários demo
 npm run db:studio    # Prisma Studio
-npm run test:e2e     # smoke test E2E (exige `npm run dev` ativo)
+npm run test:e2e     # smoke test E2E de API/pages (exige `npm run dev` ativo)
+npm run test:ui      # testes de UI no browser headless (Playwright)
 ```
 
 ### Smoke test E2E
@@ -88,6 +89,20 @@ páginas SSR e i18n (52 verificações).
 npm run dev                    # terminal 1
 npm run test:e2e               # terminal 2 (BASE=http://localhost:3000)
 BASE=http://192.168.1.10:3000 npm run test:e2e   # se o servidor estiver em outra interface
+```
+
+### Testes de UI (Playwright)
+
+`tests/wizard.spec.ts` exercita o fluxo num Chromium headless: login → wizard
+(4 etapas) → geração → revisão (checklist, substituição, remoção) → finalização →
+download do PDF → envio para aluno, além de redirecionamento de rotas protegidas,
+404 localizado e troca de idioma. Uma configuração é idempotente: roda de novo
+sobre o mesmo banco sem depender do estado deixado pela execução anterior.
+
+```bash
+npx playwright install chromium   # uma vez
+npm run dev                       # terminal 1
+npm run test:ui                   # terminal 2 (BASE_URL=http://localhost:3000)
 ```
 
 ## Estrutura

@@ -371,7 +371,10 @@ export function ReviewStep({
 
                     {/* Painel de substituição */}
                     {panelOpen && (
-                      <div className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
+                      <div
+                        data-testid="replace-panel"
+                        className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3"
+                      >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div>
                             <p className="text-sm font-semibold text-indigo-900">
@@ -402,7 +405,10 @@ export function ReviewStep({
                               {t("wizard.reviewStep.noAlternatives")}
                             </p>
                           ) : (
-                            <ul className="max-h-64 divide-y divide-indigo-100 overflow-y-auto rounded-lg border border-indigo-100 bg-white">
+                            <ul
+                              data-testid="alternatives"
+                              className="max-h-64 divide-y divide-indigo-100 overflow-y-auto rounded-lg border border-indigo-100 bg-white"
+                            >
                               {visibleAlternatives.map((alt) => {
                                 const altWarning = exerciseWarning(alt, locale);
                                 return (
