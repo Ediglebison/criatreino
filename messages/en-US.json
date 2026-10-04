@@ -1,0 +1,417 @@
+{
+  "metadata": {
+    "title": "CrIA Treino — AI-powered personalized workouts",
+    "description": "Create personalized workouts with artificial intelligence from each student's measurements, limitations and goals. Review, swap exercises and export to PDF."
+  },
+  "common": {
+    "appName": "CrIA Treino",
+    "tagline": "AI-powered workouts",
+    "loading": "Loading...",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "continue": "Continue",
+    "close": "Close",
+    "confirm": "Confirm",
+    "edit": "Edit",
+    "remove": "Remove",
+    "search": "Search",
+    "retry": "Try again",
+    "required": "Required",
+    "optional": "Optional",
+    "logout": "Sign out",
+    "login": "Sign in",
+    "register": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "actions": "Actions",
+    "date": "Date",
+    "status": "Status",
+    "view": "View",
+    "all": "All",
+    "none": "None",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "noResults": "No results found.",
+    "language": "Language",
+    "days": "days",
+    "disclaimer": "Notice: this plan is an AI-generated suggestion and does not replace an assessment by healthcare or fitness professionals. If you feel pain, stop and seek a professional."
+  },
+  "landing": {
+    "hero": {
+      "badge": "AI for workouts",
+      "title": "Personalized workouts generated with artificial intelligence",
+      "subtitle": "Collect body measurements, limitations, goals and available days for each student. The AI suggests the workout, you review it with a checklist, swap what doesn't fit and export to PDF or send it straight to the student.",
+      "ctaPrimary": "Get started",
+      "ctaSecondary": "See how it works"
+    },
+    "features": {
+      "title": "Everything in a single flow",
+      "subtitle": "From the assessment form to the final PDF in minutes.",
+      "interview": {
+        "title": "Full assessment",
+        "description": "Body measurements, limitations, goals, weekly frequency, session length and available equipment."
+      },
+      "ai": {
+        "title": "AI suggestion",
+        "description": "The AI builds a coherent workout based on the athlete's profile, respecting days, duration and restrictions."
+      },
+      "review": {
+        "title": "Checklist review",
+        "description": "Mark the exercises the student can't keep and instantly swap them for equivalent alternatives."
+      },
+      "export": {
+        "title": "Export and share",
+        "description": "Finish and send the workout to the student user with one click, or generate a professional PDF."
+      }
+    },
+    "how": {
+      "title": "How it works",
+      "step1": { "title": "1. Set up the profile", "description": "Enter measurements, goal, limitations and how many days per week the student trains." },
+      "step2": { "title": "2. Generate with AI", "description": "The AI suggests a workout split with sets, reps and rest." },
+      "step3": { "title": "3. Review and swap", "description": "Use the checklist to replace unfeasible exercises with equivalents for the same muscle group." },
+      "step4": { "title": "4. Export", "description": "Send it to the student or download the PDF and start training." }
+    },
+    "cta": {
+      "title": "Ready to build the next workout?",
+      "description": "Create your account and generate your first workout in minutes.",
+      "button": "Create free account"
+    },
+    "footer": {
+      "rights": "All rights reserved.",
+      "madeWith": "Built for coaches and students."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Access your account to continue",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "createOne": "Create one now"
+    },
+    "register": {
+      "title": "Create account",
+      "subtitle": "Start generating AI workouts",
+      "submit": "Create account",
+      "submitting": "Creating account...",
+      "haveAccount": "Already have an account?",
+      "login": "Sign in"
+    },
+    "fields": {
+      "name": "Full name",
+      "email": "Email",
+      "password": "Password",
+      "passwordHint": "At least 8 characters",
+      "role": "What is your profile?",
+      "roleProfessor": "Coach / trainer",
+      "roleProfessorHint": "I create workouts for myself and my students",
+      "roleAluno": "Student",
+      "roleAlunoHint": "I receive workouts from my coaches"
+    },
+    "errors": {
+      "invalidCredentials": "Incorrect email or password.",
+      "emailTaken": "An account with this email already exists.",
+      "weakPassword": "The password must be at least 8 characters.",
+      "invalidData": "Please check the information provided."
+    }
+  },
+  "roles": {
+    "PROFESSOR": "Coach",
+    "ALUNO": "Student"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "newWorkout": "New workout",
+    "workouts": "Workouts",
+    "students": "Students",
+    "profile": "Profile",
+    "menu": "Menu",
+    "userMenu": "User menu"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Hello, {name}!",
+    "subtitleProfessor": "Manage your students and workouts.",
+    "subtitleAluno": "Here are your workouts.",
+    "stats": {
+      "workouts": "Workouts created",
+      "students": "Students",
+      "month": "Workouts this month"
+    },
+    "recentWorkouts": "Recent workouts",
+    "myWorkouts": "My workouts",
+    "studentsTitle": "My students",
+    "emptyWorkouts": "You haven't created any workout yet.",
+    "emptyWorkoutsCta": "Create first workout",
+    "emptyStudents": "You don't have students yet.",
+    "emptyAlunoWorkouts": "No workouts received yet. Wait for your coach to send one.",
+    "newStudent": "Add student",
+    "newStudentDialog": {
+      "title": "Add student",
+      "description": "The student gets an access email with the password you define.",
+      "submit": "Add",
+      "success": "Student added successfully.",
+      "emailTaken": "This email is already registered. Use the email link when sending a workout."
+    },
+    "seeAll": "See all",
+    "viewWorkout": "View workout"
+  },
+  "goals": {
+    "FAT_LOSS": "Fat loss",
+    "MUSCLE_GAIN": "Muscle gain",
+    "STRENGTH": "Strength",
+    "ENDURANCE": "Endurance",
+    "HEALTH": "Health & wellbeing",
+    "MOBILITY": "Mobility & posture",
+    "SPORT_SPECIFIC": "Sport performance"
+  },
+  "sex": {
+    "MALE": "Male",
+    "FEMALE": "Female",
+    "OTHER": "Other",
+    "UNSPECIFIED": "Prefer not to say"
+  },
+  "experience": {
+    "BEGINNER": "Beginner",
+    "INTERMEDIATE": "Intermediate",
+    "ADVANCED": "Advanced"
+  },
+  "equipment": {
+    "BARBELL": "Barbell",
+    "DUMBBELL": "Dumbbells",
+    "MACHINE": "Machines",
+    "CABLE": "Cable / pulley",
+    "BODYWEIGHT": "Bodyweight",
+    "KETTLEBELL": "Kettlebell",
+    "BAND": "Bands",
+    "OTHER": "Other"
+  },
+  "muscleGroups": {
+    "CHEST": "Chest",
+    "BACK": "Back",
+    "SHOULDERS": "Shoulders",
+    "BICEPS": "Biceps",
+    "TRICEPS": "Triceps",
+    "LEGS": "Legs",
+    "GLUTES": "Glutes",
+    "ABS": "Abs",
+    "CARDIO": "Cardio"
+  },
+  "limitations": {
+    "SHOULDER": "Shoulders",
+    "KNEE": "Knees",
+    "LOWER_BACK": "Lower back",
+    "NECK": "Neck",
+    "WRIST": "Wrists",
+    "ANKLE": "Ankles",
+    "ELBOW": "Elbows",
+    "HIP": "Hip",
+    "OTHER": "Other"
+  },
+  "profile": {
+    "title": "Athlete profile",
+    "measurementsSection": "Body measurements",
+    "questionnaireSection": "Goals and limitations",
+    "scheduleSection": "Availability",
+    "birthDate": "Date of birth",
+    "sex": "Sex",
+    "height": "Height (cm)",
+    "weight": "Weight (kg)",
+    "bodyFat": "Body fat %",
+    "circumferences": "Circumferences (cm)",
+    "chest": "Chest",
+    "waist": "Waist",
+    "hips": "Hips",
+    "armRight": "Right arm",
+    "armLeft": "Left arm",
+    "thighRight": "Right thigh",
+    "thighLeft": "Left thigh",
+    "calf": "Calf",
+    "goal": "Main goal",
+    "goalNotes": "Goal notes",
+    "goalNotesPlaceholder": "e.g. lose 6 kg in 3 months, prepare for a 10 km race...",
+    "limitations": "Limitations and pains",
+    "limitationsHint": "Check what applies. Risky exercises will be avoided or replaced.",
+    "limitationsNone": "No limitations",
+    "limitationNotes": "Limitation details",
+    "limitationNotesPlaceholder": "e.g. right shoulder injury, ongoing physical therapy...",
+    "daysPerWeek": "Available days per week",
+    "sessionMinutes": "Session length",
+    "minutes": "min",
+    "experience": "Experience level",
+    "equipment": "Available equipment",
+    "equipmentHint": "The suggestion uses only what you check (and the exercise catalog).",
+    "observations": "General notes",
+    "observationsPlaceholder": "Any extra information that helps build the workout.",
+    "savedSuccess": "Profile saved successfully."
+  },
+  "wizard": {
+    "title": "New workout",
+    "subtitle": "Fill in the profile, generate with AI and review before finishing.",
+    "steps": {
+      "athlete": "Athlete",
+      "profile": "Profile",
+      "generate": "Generate",
+      "review": "Review",
+      "save": "Save"
+    },
+    "athleteStep": {
+      "title": "Who is this workout for?",
+      "me": "For myself",
+      "myStudents": "My students",
+      "searchStudents": "Search student by name or email",
+      "noStudents": "No students registered yet.",
+      "newStudent": "Register a new student",
+      "newStudentName": "Student name",
+      "newStudentEmail": "Student email",
+      "newStudentPassword": "Temporary password",
+      "createStudent": "Register and select"
+    },
+    "profileStep": {
+      "title": "Profile and questionnaire",
+      "hint": "This data feeds the AI. Fill in what you can; empty fields are ignored.",
+      "loadError": "Could not load the saved profile."
+    },
+    "generateStep": {
+      "title": "Generate AI suggestion",
+      "intro": "Check the summary and generate the workout.",
+      "summaryAthlete": "Athlete",
+      "summaryGoal": "Goal",
+      "summaryDays": "Days/week",
+      "summaryDuration": "Session",
+      "summaryExperience": "Experience",
+      "summaryLimitations": "Limitations",
+      "summaryEquipment": "Equipment",
+      "button": "Generate workout with AI",
+      "generating": "The AI is building your workout...",
+      "generatingHint": "This usually takes a few seconds.",
+      "error": "Could not generate the workout.",
+      "simulatedNotice": "Simulated mode: OPENAI_API_KEY is not configured, so this workout was generated by local rules."
+    },
+    "reviewStep": {
+      "title": "Review before finishing",
+      "hint": "Tick the checklist on exercises the student can't keep and replace them with an alternative.",
+      "checklistProgress": "{done} of {total} reviewed",
+      "cannotKeep": "Can't keep this",
+      "replace": "Replace",
+      "replacing": "Replacing: {name}",
+      "replaceTitle": "Choose an alternative",
+      "replaceHint": "Exercises for the same muscle group, compatible with available equipment.",
+      "onlyAvailable": "Available equipment only",
+      "noAlternatives": "No alternatives found.",
+      "apply": "Replace",
+      "replacedBadge": "Replaced",
+      "replacedFrom": "Replaces: {name}",
+      "removeExercise": "Remove exercise",
+      "removed": "Removed from the session",
+      "restore": "Undo",
+      "dayLabel": "Day {n}",
+      "generateAgain": "Generate again",
+      "finish": "Finish and save",
+      "finishing": "Saving...",
+      "emptyDay": "This day has no exercises left.",
+      "workoutTitle": "Workout title",
+      "workoutTitlePlaceholder": "e.g. Workout A — 4-day hypertrophy"
+    },
+    "errors": {
+      "profileInvalid": "Fix the highlighted fields before continuing.",
+      "generateFailed": "Failed to generate the workout. Please try again.",
+      "saveFailed": "Could not save the workout."
+    }
+  },
+  "workout": {
+    "notFound": "Workout not found.",
+    "accessDenied": "You don't have permission to view this workout.",
+    "createdAt": "Created on",
+    "createdBy": "Created by",
+    "athlete": "Athlete",
+    "source": "Source",
+    "sourceAI": "AI",
+    "sourceSIMULATED": "Simulated",
+    "sourceMANUAL": "Manual",
+    "statusDRAFT": "Draft",
+    "statusFINAL": "Final",
+    "exportPdf": "Export PDF",
+    "exportingPdf": "Generating PDF...",
+    "assign": "Send to student",
+    "assignDialog": {
+      "title": "Send workout to a student",
+      "description": "The workout will appear automatically in the student's account.",
+      "student": "Student",
+      "searchStudent": "Search student by name or email",
+      "note": "Message (optional)",
+      "notePlaceholder": "e.g. workout valid from Monday",
+      "submit": "Send",
+      "sending": "Sending...",
+      "success": "Workout sent to {name}.",
+      "already": "This workout was already sent to this student.",
+      "notFound": "Student not found. Register them before sending.",
+      "self": "This workout already belongs to this student."
+    },
+    "emptyDays": "This workout has no days.",
+    "table": {
+      "exercise": "Exercise",
+      "sets": "Sets",
+      "reps": "Reps",
+      "rest": "Rest",
+      "tempo": "Tempo",
+      "notes": "Notes",
+      "order": "#"
+    },
+    "seconds": "{n}s",
+    "print": "Print",
+    "forAluno": {
+      "fromProfessor": "Sent by {name}"
+    }
+  },
+  "students": {
+    "title": "Students",
+    "subtitle": "Students linked to your account.",
+    "table": { "name": "Student", "email": "Email", "workouts": "Workouts", "joined": "Joined" },
+    "newWorkoutFor": "New workout",
+    "empty": "You don't have students yet.",
+    "emptyHint": "Add a student to send workouts straight to their account.",
+    "searchPlaceholder": "Search student..."
+  },
+  "pdf": {
+    "title": "Workout",
+    "generatedAt": "Generated on",
+    "page": "Page {n} of {m}",
+    "summary": "Athlete summary",
+    "goal": "Goal",
+    "daysPerWeek": "Days/week",
+    "sessionMinutes": "Session (min)",
+    "experience": "Experience",
+    "limitations": "Limitations",
+    "equipment": "Equipment",
+    "weight": "Weight (kg)",
+    "height": "Height (cm)",
+    "day": "Day",
+    "exercise": "Exercise",
+    "sets": "Sets",
+    "reps": "Reps",
+    "rest": "Rest",
+    "notes": "Notes",
+    "none": "—",
+    "disclaimer": "Notice: AI-generated plan, does not replace an assessment by healthcare/fitness professionals. Stop if you feel pain."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The address you accessed does not exist or has moved.",
+    "backHome": "Back to home"
+  },
+  "errors": {
+    "unauthorized": "Session expired. Please sign in again.",
+    "forbidden": "Access denied.",
+    "notFound": "Resource not found.",
+    "validation": "Invalid data.",
+    "internal": "Internal error. Please try again.",
+    "required": "Required field.",
+    "invalidNumber": "Enter a valid number.",
+    "selectEquipment": "Select at least one piece of equipment."
+  }
+}

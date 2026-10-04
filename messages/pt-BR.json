@@ -1,0 +1,417 @@
+{
+  "metadata": {
+    "title": "CrIA Treino — Treinos personalizados com IA",
+    "description": "Crie treinos personalizados com inteligência artificial a partir das medidas, limitações e objetivos de cada aluno. Revise, substitua exercícios e exporte em PDF."
+  },
+  "common": {
+    "appName": "CrIA Treino",
+    "tagline": "Treinos com inteligência artificial",
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "cancel": "Cancelar",
+    "back": "Voltar",
+    "next": "Avançar",
+    "continue": "Continuar",
+    "close": "Fechar",
+    "confirm": "Confirmar",
+    "edit": "Editar",
+    "remove": "Remover",
+    "search": "Buscar",
+    "retry": "Tentar novamente",
+    "required": "Obrigatório",
+    "optional": "Opcional",
+    "logout": "Sair",
+    "login": "Entrar",
+    "register": "Criar conta",
+    "email": "E-mail",
+    "password": "Senha",
+    "name": "Nome",
+    "actions": "Ações",
+    "date": "Data",
+    "status": "Status",
+    "view": "Ver",
+    "all": "Todos",
+    "none": "Nenhum",
+    "errorGeneric": "Algo deu errado. Tente novamente.",
+    "noResults": "Nenhum resultado encontrado.",
+    "language": "Idioma",
+    "days": "dias",
+    "disclaimer": "Aviso: este plano é uma sugestão gerada por IA e não substitui avaliação de profissionais de saúde ou educação física. Em caso de dor ou desconforto, interrompa o exercício e procure um profissional."
+  },
+  "landing": {
+    "hero": {
+      "badge": "IA para treinos",
+      "title": "Treinos personalizados gerados com inteligência artificial",
+      "subtitle": "Reúna medidas corporais, limitações, objetivos e dias disponíveis de cada aluno. A IA sugere o treino, você revisa com um checklist, substitui o que não der certo e exporta em PDF ou envia direto para o aluno.",
+      "ctaPrimary": "Começar agora",
+      "ctaSecondary": "Ver como funciona"
+    },
+    "features": {
+      "title": "Tudo em um fluxo só",
+      "subtitle": "Do formulário de avaliação ao PDF final em minutos.",
+      "interview": {
+        "title": "Avaliação completa",
+        "description": "Medidas corporais, limitações, objetivos, frequência semanal, tempo de sessão e equipamentos disponíveis."
+      },
+      "ai": {
+        "title": "Sugestão com IA",
+        "description": "A IA monta um treino coerente com o perfil do atleta, respeitando dias, duração e restrições."
+      },
+      "review": {
+        "title": "Revisão com checklist",
+        "description": "Marque os exercícios que o aluno não consegue manter e substitua na hora por alternativas equivalentes."
+      },
+      "export": {
+        "title": "Exporte e compartilhe",
+        "description": "Finalize e envie o treino para o usuário aluno com um clique ou gere um PDF profissional."
+      }
+    },
+    "how": {
+      "title": "Como funciona",
+      "step1": { "title": "1. Cadastre o perfil", "description": "Informe medidas, objetivo, limitações e quantos dias por semana o aluno treina." },
+      "step2": { "title": "2. Gere com IA", "description": "A IA sugere uma divisão de treino com séries, repetições e descanso." },
+      "step3": { "title": "3. Revisie e substitua", "description": "Use o checklist para trocar exercícios inviáveis por alternativas do mesmo grupo muscular." },
+      "step4": { "title": "4. Exporte", "description": "Envie para o aluno ou baixe em PDF e comece a aplicar." }
+    },
+    "cta": {
+      "title": "Pronto para montar o próximo treino?",
+      "description": "Crie sua conta e gere o primeiro treino em minutos.",
+      "button": "Criar conta grátis"
+    },
+    "footer": {
+      "rights": "Todos os direitos reservados.",
+      "madeWith": "Feito para professores e alunos."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar",
+      "subtitle": "Acesse sua conta para continuar",
+      "submit": "Entrar",
+      "submitting": "Entrando...",
+      "noAccount": "Ainda não tem conta?",
+      "createOne": "Crie uma agora"
+    },
+    "register": {
+      "title": "Criar conta",
+      "subtitle": "Comece a gerar treinos com IA",
+      "submit": "Criar conta",
+      "submitting": "Criando conta...",
+      "haveAccount": "Já tem uma conta?",
+      "login": "Entrar"
+    },
+    "fields": {
+      "name": "Nome completo",
+      "email": "E-mail",
+      "password": "Senha",
+      "passwordHint": "Mínimo de 8 caracteres",
+      "role": "Qual é o seu perfil?",
+      "roleProfessor": "Professor / personal",
+      "roleProfessorHint": "Crio treinos para mim e para meus alunos",
+      "roleAluno": "Aluno",
+      "roleAlunoHint": "Recebo treinos dos meus professores"
+    },
+    "errors": {
+      "invalidCredentials": "E-mail ou senha incorretos.",
+      "emailTaken": "Já existe uma conta com este e-mail.",
+      "weakPassword": "A senha precisa ter pelo menos 8 caracteres.",
+      "invalidData": "Verifique os dados informados."
+    }
+  },
+  "roles": {
+    "PROFESSOR": "Professor",
+    "ALUNO": "Aluno"
+  },
+  "nav": {
+    "dashboard": "Painel",
+    "newWorkout": "Novo treino",
+    "workouts": "Treinos",
+    "students": "Alunos",
+    "profile": "Perfil",
+    "menu": "Menu",
+    "userMenu": "Menu do usuário"
+  },
+  "dashboard": {
+    "title": "Painel",
+    "welcome": "Olá, {name}!",
+    "subtitleProfessor": "Gerencie seus alunos e treinos.",
+    "subtitleAluno": "Aqui estão os seus treinos.",
+    "stats": {
+      "workouts": "Treinos criados",
+      "students": "Alunos",
+      "month": "Treinos neste mês"
+    },
+    "recentWorkouts": "Treinos recentes",
+    "myWorkouts": "Meus treinos",
+    "studentsTitle": "Meus alunos",
+    "emptyWorkouts": "Você ainda não criou nenhum treino.",
+    "emptyWorkoutsCta": "Criar primeiro treino",
+    "emptyStudents": "Você ainda não tem alunos cadastrados.",
+    "emptyAlunoWorkouts": "Nenhum treino recebido ainda. Aguarde seu professor enviar.",
+    "newStudent": "Cadastrar aluno",
+    "newStudentDialog": {
+      "title": "Cadastrar aluno",
+      "description": "O aluno recebe um e-mail de acesso com a senha definida por você.",
+      "submit": "Cadastrar",
+      "success": "Aluno cadastrado com sucesso.",
+      "emailTaken": "Este e-mail já está cadastrado. Use o vínculo por e-mail ao enviar um treino."
+    },
+    "seeAll": "Ver todos",
+    "viewWorkout": "Ver treino"
+  },
+  "goals": {
+    "FAT_LOSS": "Emagrecimento",
+    "MUSCLE_GAIN": "Hipertrofia",
+    "STRENGTH": "Força",
+    "ENDURANCE": "Resistência",
+    "HEALTH": "Saúde e bem-estar",
+    "MOBILITY": "Mobilidade e postura",
+    "SPORT_SPECIFIC": "Desempenho esportivo"
+  },
+  "sex": {
+    "MALE": "Masculino",
+    "FEMALE": "Feminino",
+    "OTHER": "Outro",
+    "UNSPECIFIED": "Prefiro não informar"
+  },
+  "experience": {
+    "BEGINNER": "Iniciante",
+    "INTERMEDIATE": "Intermediário",
+    "ADVANCED": "Avançado"
+  },
+  "equipment": {
+    "BARBELL": "Barra",
+    "DUMBBELL": "Halteres",
+    "MACHINE": "Máquinas",
+    "CABLE": "Polia / cabos",
+    "BODYWEIGHT": "Peso do corpo",
+    "KETTLEBELL": "Kettlebell",
+    "BAND": "Elásticos / faixas",
+    "OTHER": "Outros"
+  },
+  "muscleGroups": {
+    "CHEST": "Peito",
+    "BACK": "Costas",
+    "SHOULDERS": "Ombros",
+    "BICEPS": "Bíceps",
+    "TRICEPS": "Tríceps",
+    "LEGS": "Pernas",
+    "GLUTES": "Glúteos",
+    "ABS": "Abdômen",
+    "CARDIO": "Cardio"
+  },
+  "limitations": {
+    "SHOULDER": "Ombros",
+    "KNEE": "Joelhos",
+    "LOWER_BACK": "Coluna lombar",
+    "NECK": "Pescoço",
+    "WRIST": "Punhos",
+    "ANKLE": "Tornozelos",
+    "ELBOW": "Cotovelos",
+    "HIP": "Quadril",
+    "OTHER": "Outras"
+  },
+  "profile": {
+    "title": "Perfil do atleta",
+    "measurementsSection": "Medidas corporais",
+    "questionnaireSection": "Objetivos e limitações",
+    "scheduleSection": "Disponibilidade",
+    "birthDate": "Data de nascimento",
+    "sex": "Sexo",
+    "height": "Altura (cm)",
+    "weight": "Peso (kg)",
+    "bodyFat": "% de gordura",
+    "circumferences": "Circunferências (cm)",
+    "chest": "Peito",
+    "waist": "Cintura",
+    "hips": "Quadril",
+    "armRight": "Braço direito",
+    "armLeft": "Braço esquerdo",
+    "thighRight": "Coxa direita",
+    "thighLeft": "Coxa esquerda",
+    "calf": "Panturrilha",
+    "goal": "Objetivo principal",
+    "goalNotes": "Observações sobre o objetivo",
+    "goalNotesPlaceholder": "Ex.: perder 6 kg em 3 meses, preparar prova de 10 km...",
+    "limitations": "Limitações e dores",
+    "limitationsHint": "Marque o que se aplica. Os exercícios de risco serão evitados ou substituídos.",
+    "limitationsNone": "Nenhuma limitação",
+    "limitationNotes": "Detalhes das limitações",
+    "limitationNotesPlaceholder": "Ex.: lesão no ombro direito, fisioterapia em andamento...",
+    "daysPerWeek": "Dias disponíveis por semana",
+    "sessionMinutes": "Duração da sessão",
+    "minutes": "min",
+    "experience": "Nível de experiência",
+    "equipment": "Equipamentos disponíveis",
+    "equipmentHint": "A sugestão usa apenas o que você marcou (e o catálogo de exercícios).",
+    "observations": "Observações gerais",
+    "observationsPlaceholder": "Qualquer informação extra que ajude a montar o treino.",
+    "savedSuccess": "Perfil salvo com sucesso."
+  },
+  "wizard": {
+    "title": "Novo treino",
+    "subtitle": "Preencha o perfil, gere com IA e revise antes de finalizar.",
+    "steps": {
+      "athlete": "Atleta",
+      "profile": "Perfil",
+      "generate": "Gerar",
+      "review": "Revisão",
+      "save": "Salvar"
+    },
+    "athleteStep": {
+      "title": "Para quem é este treino?",
+      "me": "Para mim",
+      "myStudents": "Meus alunos",
+      "searchStudents": "Buscar aluno por nome ou e-mail",
+      "noStudents": "Nenhum aluno cadastrado ainda.",
+      "newStudent": "Cadastrar novo aluno",
+      "newStudentName": "Nome do aluno",
+      "newStudentEmail": "E-mail do aluno",
+      "newStudentPassword": "Senha provisória",
+      "createStudent": "Cadastrar e selecionar"
+    },
+    "profileStep": {
+      "title": "Perfil e questionário",
+      "hint": "Esses dados alimentam a IA. Preencha o que for possível; campos vazios são ignorados.",
+      "loadError": "Não foi possível carregar o perfil salvo."
+    },
+    "generateStep": {
+      "title": "Gerar sugestão com IA",
+      "intro": "Confira o resumo e gere o treino.",
+      "summaryAthlete": "Atleta",
+      "summaryGoal": "Objetivo",
+      "summaryDays": "Dias/semana",
+      "summaryDuration": "Sessão",
+      "summaryExperience": "Experiência",
+      "summaryLimitations": "Limitações",
+      "summaryEquipment": "Equipamentos",
+      "button": "Gerar treino com IA",
+      "generating": "A IA está montando o treino...",
+      "generatingHint": "Isso costuma levar alguns segundos.",
+      "error": "Não foi possível gerar o treino.",
+      "simulatedNotice": "Modo simulado: o OPENAI_API_KEY não está configurado, então este treino foi gerado por regras locais."
+    },
+    "reviewStep": {
+      "title": "Revise antes de finalizar",
+      "hint": "Marque o checklist nos exercícios que o aluno não consegue manutar e substitua por uma alternativa.",
+      "checklistProgress": "{done} de {total} revisados",
+      "cannotKeep": "Não posso manutar",
+      "replace": "Substituir",
+      "replacing": "Substituindo: {name}",
+      "replaceTitle": "Escolha uma alternativa",
+      "replaceHint": "Exercícios do mesmo grupo muscular, compatíveis com os equipamentos disponíveis.",
+      "onlyAvailable": "Somente equipamentos disponíveis",
+      "noAlternatives": "Nenhuma alternativa encontrada.",
+      "apply": "Substituir",
+      "replacedBadge": "Substituído",
+      "replacedFrom": "Substitui: {name}",
+      "removeExercise": "Remover exercício",
+      "removed": "Removido da sessão",
+      "restore": "Desfazer",
+      "dayLabel": "Dia {n}",
+      "generateAgain": "Gerar novamente",
+      "finish": "Finalizar e salvar",
+      "finishing": "Salvando...",
+      "emptyDay": "Este dia ficou sem exercícios.",
+      "workoutTitle": "Título do treino",
+      "workoutTitlePlaceholder": "Ex.: Treino A — Hipertrofia 4 dias"
+    },
+    "errors": {
+      "profileInvalid": "Corrija os campos destacados antes de continuar.",
+      "generateFailed": "Falha ao gerar o treino. Tente novamente.",
+      "saveFailed": "Não foi possível salvar o treino."
+    }
+  },
+  "workout": {
+    "notFound": "Treino não encontrado.",
+    "accessDenied": "Você não tem permissão para ver este treino.",
+    "createdAt": "Criado em",
+    "createdBy": "Criado por",
+    "athlete": "Atleta",
+    "source": "Fonte",
+    "sourceAI": "IA",
+    "sourceSIMULATED": "Simulado",
+    "sourceMANUAL": "Manual",
+    "statusDRAFT": "Rascunho",
+    "statusFINAL": "Finalizado",
+    "exportPdf": "Exportar PDF",
+    "exportingPdf": "Gerando PDF...",
+    "assign": "Enviar para aluno",
+    "assignDialog": {
+      "title": "Enviar treino para um aluno",
+      "description": "O treino aparecerá automaticamente na conta do aluno selecionado.",
+      "student": "Aluno",
+      "searchStudent": "Buscar aluno por nome ou e-mail",
+      "note": "Mensagem (opcional)",
+      "notePlaceholder": "Ex.: treino válido a partir de segunda-feira",
+      "submit": "Enviar",
+      "sending": "Enviando...",
+      "success": "Treino enviado para {name}.",
+      "already": "Este treino já foi enviado para este aluno.",
+      "notFound": "Aluno não encontrado. Cadastre-o antes de enviar.",
+      "self": "Este treino já pertence a este aluno."
+    },
+    "emptyDays": "Este treino não tem dias cadastrados.",
+    "table": {
+      "exercise": "Exercício",
+      "sets": "Séries",
+      "reps": "Repetições",
+      "rest": "Descanso",
+      "tempo": "Tempo",
+      "notes": "Observações",
+      "order": "#"
+    },
+    "seconds": "{n}s",
+    "print": "Imprimir",
+    "forAluno": {
+      "fromProfessor": "Enviado por {name}"
+    }
+  },
+  "students": {
+    "title": "Alunos",
+    "subtitle": "Alunos vinculados à sua conta.",
+    "table": { "name": "Aluno", "email": "E-mail", "workouts": "Treinos", "joined": "Cadastro" },
+    "newWorkoutFor": "Novo treino",
+    "empty": "Você ainda não tem alunos cadastrados.",
+    "emptyHint": "Cadastre um aluno para enviar treinos diretamente na conta dele.",
+    "searchPlaceholder": "Buscar aluno..."
+  },
+  "pdf": {
+    "title": "Treino",
+    "generatedAt": "Gerado em",
+    "page": "Página {n} de {m}",
+    "summary": "Resumo do atleta",
+    "goal": "Objetivo",
+    "daysPerWeek": "Dias/semana",
+    "sessionMinutes": "Sessão (min)",
+    "experience": "Experiência",
+    "limitations": "Limitações",
+    "equipment": "Equipamentos",
+    "weight": "Peso (kg)",
+    "height": "Altura (cm)",
+    "day": "Dia",
+    "exercise": "Exercício",
+    "sets": "Sér.",
+    "reps": "Reps",
+    "rest": "Descanso",
+    "notes": "Obs.",
+    "none": "—",
+    "disclaimer": "Aviso: plano gerado por IA, não substitui avaliação de profissionais de saúde/educação física. Interrompa em caso de dor."
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "description": "O endereço acessado não existe ou foi movido.",
+    "backHome": "Voltar ao início"
+  },
+  "errors": {
+    "unauthorized": "Sessão expirada. Entre novamente.",
+    "forbidden": "Acesso negado.",
+    "notFound": "Recurso não encontrado.",
+    "validation": "Dados inválidos.",
+    "internal": "Erro interno. Tente novamente.",
+    "required": "Campo obrigatório.",
+    "invalidNumber": "Informe um número válido.",
+    "selectEquipment": "Selecione ao menos um equipamento."
+  }
+}

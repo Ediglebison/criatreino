@@ -1,0 +1,243 @@
+// CrIA Treino - Prisma schema
+// Docs: .agents/skills/prisma-*/SKILL.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  PROFESSOR
+  ALUNO
+}
+
+enum Sex {
+  MALE
+  FEMALE
+  OTHER
+  UNSPECIFIED
+}
+
+enum Goal {
+  FAT_LOSS
+  MUSCLE_GAIN
+  STRENGTH
+  ENDURANCE
+  HEALTH
+  MOBILITY
+  SPORT_SPECIFIC
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum MuscleGroup {
+  CHEST
+  BACK
+  SHOULDERS
+  BICEPS
+  TRICEPS
+  LEGS
+  GLUTES
+  ABS
+  CARDIO
+}
+
+enum Equipment {
+  BARBELL
+  DUMBBELL
+  MACHINE
+  CABLE
+  BODYWEIGHT
+  KETTLEBELL
+  BAND
+  OTHER
+}
+
+enum WorkoutStatus {
+  DRAFT
+  FINAL
+}
+
+enum WorkoutSource {
+  AI
+  SIMULATED
+  MANUAL
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  locale       String   @default("pt-BR")
+
+  professorId String?
+  professor   User?    @relation("StudentOf", fields: [professorId], references: [id], onDelete: SetNull)
+  students    User[]   @relation("StudentOf")
+
+  profile AthleteProfile?
+
+  workoutsOwned     Workout[] @relation("WorkoutOwner")
+  workoutsCreated   Workout[] @relation("WorkoutCreator")
+  assignments       Assignment[] @relation("StudentAssignments")
+  assignmentsMade   Assignment[] @relation("Assigner")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([professorId])
+}
+
+// Questionário + medidas corporais do atleta (alvo do treino)
+model AthleteProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  birthDate    DateTime?
+  sex          Sex     @default(UNSPECIFIED)
+  heightCm     Float?
+  weightKg     Float?
+  bodyFatPct   Float?
+  // Medidas circunferenciais em cm: { chest, waist, hips, armRight, armLeft, thighRight, thighLeft, calf }
+  measurements Json?
+
+  goal        Goal
+  goalNotes   String?
+
+  // Limitações: lista de códigos + observação livre (ex.: "lesão no ombro direito")
+  limitations     Json     @default("[]")
+  limitationNotes String?
+
+  daysPerWeek    Int
+  sessionMinutes Int
+  experience     ExperienceLevel
+
+  // Equipamentos disponíveis: array de Equipment
+  equipment     Json @default("[]")
+  observations  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workouts Workout[]
+}
+
+model Workout {
+  id     String        @id @default(cuid())
+  title  String
+  status WorkoutStatus @default(DRAFT)
+  source WorkoutSource @default(AI)
+  locale String        @default("pt-BR")
+
+  // Para quem é o treino (atleta)
+  ownerId String
+  owner   User   @relation("WorkoutOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Quem criou/gerou (professor)
+  createdById String
+  createdBy   User   @relation("WorkoutCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  profileId String?
+  profile   AthleteProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  notes String?
+
+  days  WorkoutDay[]
+  assignments Assignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([createdById])
+  @@index([status])
+}
+
+model WorkoutDay {
+  id        String  @id @default(cuid())
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  order Int
+  label String // ex.: "Dia 1 — Peito e tríceps"
+  focus String? // grupos musculares em texto livre
+
+  exercises WorkoutExercise[]
+
+  @@index([workoutId])
+}
+
+model WorkoutExercise {
+  id      String @id @default(cuid())
+  dayId   String
+  day     WorkoutDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  order Int
+
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+
+  sets         Int
+  reps         String // "8-12", "12", "30s", "ate a falha"
+  restSeconds Int?
+  tempo        String?
+  notes        String?
+
+  // Se o exercício foi substituído na revisão, guarda o original
+  replacedFromId String?
+
+  @@index([dayId])
+}
+
+model Exercise {
+  id   String @id @default(cuid())
+  slug String @unique
+
+  namePt String
+  nameEn String
+
+  muscleGroup MuscleGroup
+  // Grupos secundários: array de MuscleGroup
+  secondaryMuscles Json    @default("[]")
+  equipment         Equipment
+
+  // Aviso/contraindicação (ex.: "evitar com lesão de ombro")
+  warningPt String?
+  warningEn String?
+
+  workoutExercises WorkoutExercise[]
+
+  createdAt DateTime @default(now())
+
+  @@index([muscleGroup])
+}
+
+// Exportação/envio do treino para um usuário aluno
+model Assignment {
+  id        String   @id @default(cuid())
+  workoutId String
+  workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   User @relation("StudentAssignments", fields: [studentId], references: [id], onDelete: Cascade)
+
+  assignedById String?
+  assigner     User? @relation("Assigner", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  note String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([workoutId, studentId])
+  @@index([studentId])
+}
