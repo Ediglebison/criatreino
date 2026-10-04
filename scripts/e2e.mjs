@@ -3,7 +3,23 @@
 //   BASE=http://IP:3000 npm run test:e2e
 // Cobre: login → alunos → geração → revisão (remover/substituir) → salvar →
 // atribuição → PDF → permissões → páginas SSR → i18n.
+import { readFileSync } from "node:fs";
+
 const BASE = process.env.BASE || "http://localhost:3000";
+
+// Fonte esperada da geração depende do .env: chave → OpenAI, sem chave → simulado
+function expectedSource() {
+  try {
+    const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
+    const key = (env.match(/^OPENAI_API_KEY=(.*)$/m)?.[1] ?? "")
+      .replace(/^["']|["']$/g, "")
+      .trim();
+    return key ? "AI" : "SIMULATED";
+  } catch {
+    return "SIMULATED";
+  }
+}
+const EXPECTED_SOURCE = expectedSource();
 const log = (s) => console.log(s);
 let failures = 0;
 const check = (name, cond, detail = "") => {
@@ -92,8 +108,31 @@ async function main() {
     cookie: profCookie,
     body: { athleteUserId: aluno.id, profile, locale: "pt-BR" },
   });
-  check("generate 200", gen.status === 200, `status=${gen.status} ${JSON.stringify(gen.data)?.slice(0, 300)}`);
-  check("source SIMULATED", gen.data?.source === "SIMULATED", `source=${gen.data?.source}`);
+  check(
+    "generate 200",
+    gen.status === 200,
+    `status=${gen.status} ${JSON.stringify(gen.data)?.slice(0, 300)}` +
+      (gen.status === 502
+        ? ` ← chave presente mas o provedor recusou a chamada (créditos/modelo/base URL). Esperado: source=${EXPECTED_SOURCE}`
+        : ""),
+  );
+  check(
+    `source ${EXPECTED_SOURCE}`,
+    gen.data?.source === EXPECTED_SOURCE,
+    `source=${gen.data?.source} (esperado ${EXPECTED_SOURCE})`,
+  );
+
+  if (gen.status !== 200) {
+    log(
+      `\n❌ Geração indisponível — suíte interrompida.\n` +
+        `   Fonte esperada: ${EXPECTED_SOURCE}.` +
+        (EXPECTED_SOURCE === "AI"
+          ? " Com chave configurada, o provedor recusou a chamada (créditos, modelo ou OPENAI_BASE_URL)."
+          : " Sem chave no .env o gerador local deveria funcionar.") +
+        "\n   Demais verificações dependem do draft gerado.",
+    );
+    process.exit(1);
+  }
   const draft = gen.data?.draft;
   check("draft tem dias", Array.isArray(draft?.days) && draft.days.length === profile.daysPerWeek, `days=${draft?.days?.length}`);
   check("cada dia tem exercícios", draft?.days?.every((d) => d.exercises.length > 0));

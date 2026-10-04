@@ -1,7 +1,24 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const PROF = { email: "prof@criatreino.dev", password: "demo12345" };
+
+/**
+ * Fonte esperada da geração: com OPENAI_API_KEY no .env a resposta vem da
+ * OpenAI (`source: "AI"`), sem chave cai no gerador local (`SIMULATED`).
+ */
+const EXPECTED_SOURCE: "AI" | "SIMULATED" = (() => {
+  try {
+    const env = readFileSync(resolve(process.cwd(), ".env"), "utf8");
+    const key = (env.match(/^OPENAI_API_KEY=(.*)$/m)?.[1] ?? "")
+      .replace(/^["']|["']$/g, "")
+      .trim();
+    return key ? "AI" : "SIMULATED";
+  } catch {
+    return "SIMULATED";
+  }
+})();
 
 async function login(page: Page, email = PROF.email) {
   await page.goto("/login");
@@ -42,10 +59,22 @@ async function fillProfileAndContinue(page: Page) {
 /** Gera o treino (modo simulado) e espera a etapa de revisão. */
 async function generateAndReachReview(page: Page) {
   await page.getByRole("button", { name: "Gerar treino com IA" }).click();
+
+  const reviewHeading = page.getByRole("heading", { name: "Revise antes de finalizar" });
+  const failure = page.getByText(/Falha ao gerar o treino|Não foi possível gerar o treino/);
+  await expect(reviewHeading.or(failure)).toBeVisible({ timeout: 60_000 });
   await expect(
-    page.getByRole("heading", { name: "Revise antes de finalizar" }),
-  ).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText(/Modo simulado/)).toBeVisible();
+    reviewHeading,
+    `geração falhou (fonte esperada: ${EXPECTED_SOURCE} — confira OPENAI_API_KEY, créditos e OPENAI_BASE_URL)`,
+  ).toBeVisible();
+
+  // O aviso de modo simulado só existe quando não há chave da OpenAI
+  const simulatedNotice = page.getByText(/Modo simulado/);
+  if (EXPECTED_SOURCE === "SIMULATED") {
+    await expect(simulatedNotice).toBeVisible();
+  } else {
+    await expect(simulatedNotice).toHaveCount(0);
+  }
 }
 
 /** Finaliza e devolve o id do treino salvo. */

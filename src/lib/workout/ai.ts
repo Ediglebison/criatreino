@@ -138,6 +138,60 @@ export type AIGenerateParams = {
   catalog: CatalogExercise[];
 };
 
+/**
+ * Modo de saída estruturada:
+ * - `strict` — structured outputs da OpenAI (`response_format: json_schema`).
+ * - `json-object` — para provedores compatíveis que não suportam `json_schema`
+ *   (Groq/OpenRouter/Ollama/Gemini em determinados modelos): a schema vai
+ *   embutida no prompt e a validação + repairDraft garantem o formato final.
+ */
+type ResponseMode = "strict" | "json-object";
+
+function createCompletion(
+  client: OpenAI,
+  model: string,
+  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+  mode: ResponseMode,
+  temperature = 0.4,
+): Promise<OpenAI.Chat.Completions.ChatCompletion> {
+  const params: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
+    model,
+    temperature,
+    messages:
+      mode === "strict"
+        ? messages
+        : [
+            ...messages,
+            {
+              role: "system",
+              content: `Return ONLY a single JSON object that matches this JSON Schema exactly (no markdown fences, no commentary):\n${JSON.stringify(planSchema)}`,
+            },
+          ],
+    response_format:
+      mode === "strict"
+        ? {
+            type: "json_schema",
+            json_schema: {
+              name: "workout_plan",
+              strict: true,
+              schema: planSchema,
+            },
+          }
+        : { type: "json_object" },
+  };
+
+  return client.chat.completions.create(params, { timeout: 60_000, maxRetries: 1 });
+}
+
+/** Erro do provedor indicando que `response_format: json_schema` não é aceito. */
+function isUnsupportedResponseFormat(error: unknown): boolean {
+  if (!(error instanceof OpenAI.APIError) || error.status !== 400) return false;
+  const detail = `${error.message} ${JSON.stringify(error.error ?? "")}`.toLowerCase();
+  return /response_format|json_schema|json_object|not supported|unsupported|unknown parameter|invalid_parameter/.test(
+    detail,
+  );
+}
+
 export async function generateWithAI(
   params: AIGenerateParams,
 ): Promise<WorkoutDraft> {
@@ -148,7 +202,12 @@ export async function generateWithAI(
 
   const { profile, athleteName, locale, catalog } = params;
 
-  const client = new OpenAI({ apiKey });
+  // OPENAI_BASE_URL permite apontar para provedores compatíveis com OpenAI
+  // (Groq, OpenRouter, Gemini, Ollama local, LM Studio, proxies, etc.)
+  const client = new OpenAI({
+    apiKey,
+    baseURL: process.env.OPENAI_BASE_URL?.trim() || undefined,
+  });
   const model = process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
 
   const system = buildSystemPrompt(locale);
@@ -162,22 +221,17 @@ export async function generateWithAI(
     { role: "user", content: user },
   ];
 
-  const completion = await client.chat.completions.create(
-    {
-      model,
-      temperature: 0.4,
-      messages,
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "workout_plan",
-          strict: true,
-          schema: planSchema,
-        },
-      },
-    },
-    { timeout: 60_000, maxRetries: 1 },
-  );
+  // Structured outputs (strict) nem sempre são suportados por provedores
+  // compatíveis → nesses casos repetimos em "json_object" com a schema no prompt.
+  let mode: ResponseMode = "strict";
+  let completion: OpenAI.Chat.Completions.ChatCompletion;
+  try {
+    completion = await createCompletion(client, model, messages, mode);
+  } catch (error) {
+    if (!isUnsupportedResponseFormat(error)) throw error;
+    mode = "json-object";
+    completion = await createCompletion(client, model, messages, mode);
+  }
 
   const content = completion.choices[0]?.message?.content;
   if (!content) {
@@ -204,6 +258,7 @@ export async function generateWithAI(
       client,
       model,
       messages,
+      mode,
       `You returned ${repaired.days.length} days but the athlete trains ${profile.daysPerWeek} days per week. Return the full plan with exactly ${profile.daysPerWeek} days.`,
     );
     if (corrected) {
@@ -221,24 +276,16 @@ async function retryWithCorrection(
   client: OpenAI,
   model: string,
   messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+  mode: ResponseMode,
   correction: string,
 ): Promise<WorkoutDraft | null> {
   try {
-    const completion = await client.chat.completions.create(
-      {
-        model,
-        temperature: 0.2,
-        messages: [...messages, { role: "user", content: correction }],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "workout_plan",
-            strict: true,
-            schema: planSchema,
-          },
-        },
-      },
-      { timeout: 60_000, maxRetries: 1 },
+    const completion = await createCompletion(
+      client,
+      model,
+      [...messages, { role: "user", content: correction }],
+      mode,
+      0.2,
     );
     const content = completion.choices[0]?.message?.content;
     if (!content) return null;

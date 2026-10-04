@@ -61,6 +61,7 @@ npm run dev             # http://localhost:3000
 | `AUTH_SECRET` | Segredo do JWT da sessão (`openssl rand -base64 32`) |
 | `OPENAI_API_KEY` | Se **vazia**, o gerador cai para o **modo simulado** (regras locais) |
 | `OPENAI_MODEL` | Modelo usado (padrão `gpt-4o-mini`) |
+| `OPENAI_BASE_URL` | Endpoint compatível com OpenAI (Groq, OpenRouter, Gemini, Ollama…). Vazio = `api.openai.com` |
 | `NEXT_PUBLIC_APP_URL` | URL pública do app |
 
 ## Scripts
