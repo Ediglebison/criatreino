@@ -82,7 +82,7 @@ npm run test:e2e     # smoke test E2E (exige `npm run dev` ativo)
 `scripts/e2e.mjs` percorre o fluxo completo via HTTP — login, lista de alunos,
 geração (modo simulado), revisão (remoção + substituição), salvamento, os dois
 caminhos de exportação (dono direto e `Assignment`), download do PDF, permissões,
-páginas SSR e i18n (45 verificações).
+páginas SSR e i18n (52 verificações).
 
 ```bash
 npm run dev                    # terminal 1

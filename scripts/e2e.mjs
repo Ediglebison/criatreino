@@ -290,6 +290,11 @@ async function main() {
   check("landing en em inglês", /Workout|training|Generate/i.test(enText));
   const nf = await fetch(BASE + "/pagina-inexistente");
   check("404 status", nf.status === 404, `status=${nf.status}`);
+  const nfText = await nf.text();
+  check("404 localizado (pt-BR)", nfText.includes("Página não encontrada"), "mensagem padrão do Next");
+  const nfEn = await fetch(BASE + "/en-US/does-not-exist");
+  const nfEnText = await nfEn.text();
+  check("404 localizado (en-US)", nfEn.status === 404 && nfEnText.includes("Page not found"), `status=${nfEn.status}`);
 
   log(failures === 0 ? "\n✅ E2E OK" : `\n❌ ${failures} falha(s)`);
   process.exit(failures === 0 ? 0 : 1);
