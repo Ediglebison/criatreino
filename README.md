@@ -64,6 +64,27 @@ npm run dev             # http://localhost:3000
 | `OPENAI_BASE_URL` | Endpoint compatível com OpenAI (Groq, OpenRouter, Gemini, Ollama…). Vazio = `api.openai.com` |
 | `NEXT_PUBLIC_APP_URL` | URL pública do app |
 
+### Provedor de IA gratuito (Groq)
+
+O app conversa com a API da OpenAI, então qualquer endpoint compatível serve.
+Para exercitar o caminho **AI** sem cartão de crédito:
+
+1. Crie a chave em <https://console.groq.com/keys> (plano gratuito, sem cartão);
+2. no `.env`:
+
+```bash
+OPENAI_API_KEY="gsk_..."
+OPENAI_BASE_URL="https://api.groq.com/openai/v1"
+OPENAI_MODEL="openai/gpt-oss-120b"   # ou openai/gpt-oss-20b, qwen/qwen3.8-27b
+```
+
+Sem `OPENAI_API_KEY` o gerador usa o **modo simulado** (regras locais, sem rede).
+Se o provedor recusar `response_format: json_schema`, o código repete
+automaticamente em `json_object` com a schema no prompt.
+
+> Após editar o `.env`, aguarde o dev server recarregar antes de rodar os testes.
+> Diagnóstico isolado do caminho de geração: `npx tsx scripts/probe-ai.ts`.
+
 ## Scripts
 
 ```bash
@@ -77,6 +98,7 @@ npm run db:seed      # seed: exercícios + usuários demo
 npm run db:studio    # Prisma Studio
 npm run test:e2e     # smoke test E2E de API/pages (exige `npm run dev` ativo)
 npm run test:ui      # testes de UI no browser headless (Playwright)
+npx tsx scripts/probe-ai.ts   # diagnóstico: 1 chamada real ao provedor de IA
 ```
 
 ### Smoke test E2E
