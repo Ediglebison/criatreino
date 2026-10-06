@@ -69,10 +69,22 @@
     },
     "how": {
       "title": "Como funciona",
-      "step1": { "title": "1. Cadastre o perfil", "description": "Informe medidas, objetivo, limitações e quantos dias por semana o aluno treina." },
-      "step2": { "title": "2. Gere com IA", "description": "A IA sugere uma divisão de treino com séries, repetições e descanso." },
-      "step3": { "title": "3. Revisie e substitua", "description": "Use o checklist para trocar exercícios inviáveis por alternativas do mesmo grupo muscular." },
-      "step4": { "title": "4. Exporte", "description": "Envie para o aluno ou baixe em PDF e comece a aplicar." }
+      "step1": {
+        "title": "1. Cadastre o perfil",
+        "description": "Informe medidas, objetivo, limitações e quantos dias por semana o aluno treina."
+      },
+      "step2": {
+        "title": "2. Gere com IA",
+        "description": "A IA sugere uma divisão de treino com séries, repetições e descanso."
+      },
+      "step3": {
+        "title": "3. Revisie e substitua",
+        "description": "Use o checklist para trocar exercícios inviáveis por alternativas do mesmo grupo muscular."
+      },
+      "step4": {
+        "title": "4. Exporte",
+        "description": "Envie para o aluno ou baixe em PDF e comece a aplicar."
+      }
     },
     "cta": {
       "title": "Pronto para montar o próximo treino?",
@@ -371,7 +383,12 @@
   "students": {
     "title": "Alunos",
     "subtitle": "Alunos vinculados à sua conta.",
-    "table": { "name": "Aluno", "email": "E-mail", "workouts": "Treinos", "joined": "Cadastro" },
+    "table": {
+      "name": "Aluno",
+      "email": "E-mail",
+      "workouts": "Treinos",
+      "joined": "Cadastro"
+    },
     "newWorkoutFor": "Novo treino",
     "empty": "Você ainda não tem alunos cadastrados.",
     "emptyHint": "Cadastre um aluno para enviar treinos diretamente na conta dele.",
@@ -412,6 +429,28 @@
     "internal": "Erro interno. Tente novamente.",
     "required": "Campo obrigatório.",
     "invalidNumber": "Informe um número válido.",
-    "selectEquipment": "Selecione ao menos um equipamento."
+    "selectEquipment": "Selecione ao menos um equipamento.",
+    "rateLimited": "Muitas tentativas. Aguarde {seconds}s e tente novamente.",
+    "quotaExceeded": "Você atingiu o limite de {limit} gerações deste mês. Faça upgrade para continuar."
+  },
+  "billing": {
+    "title": "Plano e uso",
+    "plan": "Plano atual",
+    "planFree": "Grátis",
+    "planPro": "Pro",
+    "usage": "Gerações este mês",
+    "usageValue": "{used} de {limit}",
+    "renews": "Renova em {date}",
+    "upgrade": "Fazer upgrade para o Pro",
+    "upgrading": "Redirecionando…",
+    "checkoutError": "Não foi possível iniciar o pagamento. Tente novamente.",
+    "billingDisabled": "Pagamento indisponível no momento.",
+    "quotaNotice": "Restam {remaining} de {limit} gerações este mês.",
+    "quotaOut": "Limite mensal atingido. Faça upgrade para gerar mais treinos.",
+    "success": "Assinatura ativada! Bem-vindo ao plano Pro.",
+    "cancelled": "Checkout cancelado — você continua no plano grátis.",
+    "checkout": "Assinar o Pro",
+    "perMonth": "/mês",
+    "benefits": "Gerações ilimitadas, todos os alunos e exportações liberadas."
   }
 }

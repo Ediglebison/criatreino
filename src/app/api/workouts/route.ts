@@ -59,6 +59,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
+    // Criar treino é função do professor (aluno só recebe/visualiza).
+    if (session.role !== "PROFESSOR") {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+
     const parsed = createSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       return NextResponse.json(

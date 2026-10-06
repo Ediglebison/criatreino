@@ -2,6 +2,7 @@ import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing, isLocale, DEFAULT_LOCALE } from "@/i18n/routing";
 import { SESSION_COOKIE, verifySession } from "@/lib/auth/jwt";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 const handleI18n = createIntlMiddleware(routing);
 
@@ -40,7 +41,7 @@ export default async function proxy(req: NextRequest) {
   // Já autenticado tentando acessar login/cadastro → painel
   if (anonymousOnly && session) {
     const nextPath = req.nextUrl.searchParams.get("next");
-    const target = nextPath && nextPath.startsWith("/") ? nextPath : `${prefix}/dashboard`;
+    const target = safeNextPath(nextPath, `${prefix}/dashboard`);
     return NextResponse.redirect(new URL(target, req.url));
   }
 
@@ -53,6 +54,7 @@ export default async function proxy(req: NextRequest) {
   }
 
   // Redireciona/reescreve para o segmento de idioma, detecta idioma etc.
+  // (Cabeçalhos de segurança saem do next.config.ts, que cobre /api também.)
   return handleI18n(req);
 }
 

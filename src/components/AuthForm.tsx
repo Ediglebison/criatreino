@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Alert, Button, Field, Input } from "@/components/ui";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 type Mode = "login" | "register";
 
@@ -36,7 +37,15 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          retryAfter?: number;
+        };
+        if (res.status === 429) {
+          const seconds = data.retryAfter ?? 60;
+          setError(tc("rateLimited", { seconds }));
+          return;
+        }
         setError(
           data.error === "emailTaken"
             ? t("errors.emailTaken")
@@ -49,10 +58,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
         return;
       }
 
-      const target =
-        next && next.startsWith("/") && !next.startsWith("//")
-          ? next
-          : "/dashboard";
+      const target = safeNextPath(next, "/dashboard");
       router.replace(target);
       router.refresh();
     } catch {

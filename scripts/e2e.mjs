@@ -4,6 +4,7 @@
 // Cobre: login → alunos → geração → revisão (remover/substituir) → salvar →
 // atribuição → PDF → permissões → páginas SSR → i18n.
 import { readFileSync } from "node:fs";
+import { resetTestState, fillQuota } from "./test-reset.mjs";
 
 const BASE = process.env.BASE || "http://localhost:3000";
 
@@ -77,6 +78,14 @@ async function main() {
     process.exit(1);
   }
 
+  // 0. Zera cota/rate limit das execuções anteriores (cota grátis = 3/mês)
+  try {
+    const reset = await resetTestState();
+    log(`\n[0] Reset de estado (RateLimit: ${reset.rateLimit}, UsageRecord: ${reset.usageRecord})`);
+  } catch (e) {
+    log(`\n[0] ⚠ reset de estado falhou (${e.message}) — a cota pode estar esgotada`);
+  }
+
   // 1. Login professor
   log("\n[1] Login PROFESSOR");
   const login = await req("/api/auth/login", {
@@ -121,6 +130,15 @@ async function main() {
     gen.data?.source === EXPECTED_SOURCE,
     `source=${gen.data?.source} (esperado ${EXPECTED_SOURCE})`,
   );
+  // Cota: a resposta carrega o contador pós-geração
+  const quota = gen.data?.quota;
+  check(
+    "quota retornada (used=1, remaining=limit-1)",
+    !!quota && quota.used === 1 && quota.remaining === quota.limit - 1,
+    `quota=${JSON.stringify(quota)}`,
+  );
+  check("limite grátis = 3/mês (env default)", quota?.limit === 3, `limit=${quota?.limit}`);
+  log(`     → cota: ${quota?.used}/${quota?.limit}, plano ${quota?.plan}`);
 
   if (gen.status !== 200) {
     log(
@@ -311,6 +329,100 @@ async function main() {
   // 9b. aluno não pode acessar alunos de outro professor
   const forbidden = await req("/api/students", { cookie: alunoCookie });
   check("aluno → /api/students = 403", forbidden.status === 403, `status=${forbidden.status}`);
+
+  // 9d. aluno não gera nem cria treino (função do professor)
+  const alunoGen = await req("/api/workouts/generate", {
+    method: "POST",
+    cookie: alunoCookie,
+    body: { athleteUserId: login.data.user.id, profile, locale: "pt-BR" },
+  });
+  check("aluno → generate = 403", alunoGen.status === 403, `status=${alunoGen.status}`);
+  const alunoCreate = await req("/api/workouts", {
+    method: "POST",
+    cookie: alunoCookie,
+    body: {
+      athleteUserId: login.data.user.id,
+      title: "X",
+      source: "MANUAL",
+      locale: "pt-BR",
+      days: [{ label: "D1", exercises: [{ slug: "flexao-de-peito", sets: 3, reps: "10" }] }],
+    },
+  });
+  check("aluno → criar treino = 403", alunoCreate.status === 403, `status=${alunoCreate.status}`);
+
+  // 9e. cota estourada → 402 (sem pagar IA: preenche a cota direto no banco)
+  log("\n[9e] Cota mensal");
+  const status0 = await req("/api/billing/status", { cookie: profCookie });
+  check("billing/status 200", status0.status === 200, `status=${status0.status}`);
+  check(
+    "status: plan FREE, checkout desativado sem Stripe",
+    status0.data?.plan === "FREE" && status0.data?.checkoutEnabled === false,
+    JSON.stringify(status0.data),
+  );
+  const quotaNow = status0.data?.quota;
+  check(
+    "usage registrado bate com as gerações desta suíte",
+    quotaNow?.used === 1,
+    `used=${quotaNow?.used}`,
+  );
+
+  try {
+    await fillQuota("prof@criatreino.dev", 2); // 1 já usada + 2 = limite 3
+  } catch (e) {
+    log(`     ⚠ fillQuota falhou: ${e.message}`);
+  }
+  const blocked = await req("/api/workouts/generate", {
+    method: "POST",
+    cookie: profCookie,
+    body: { athleteUserId: aluno.id, profile, locale: "pt-BR" },
+  });
+  check(
+    "402 quotaExceeded ao estourar a cota",
+    blocked.status === 402 && blocked.data?.error === "quotaExceeded",
+    `status=${blocked.status} body=${JSON.stringify(blocked.data)?.slice(0, 200)}`,
+  );
+  check(
+    "402 carrega o status da cota (para a UI)",
+    blocked.data?.quota?.remaining === 0 && blocked.data?.quota?.limit === 3,
+    JSON.stringify(blocked.data?.quota),
+  );
+  const quotaExceeded = await req("/api/billing/status", { cookie: profCookie });
+  check(
+    "status reflete cota esgotada (remaining=0)",
+    quotaExceeded.data?.quota?.remaining === 0,
+    `quota=${JSON.stringify(quotaExceeded.data?.quota)}`,
+  );
+
+  // 9f. segurança: headers e Origin
+  log("\n[9f] Cabeçalhos de segurança");
+  const page = await fetch(BASE + "/dashboard", { redirect: "manual" });
+  check(
+    "X-Frame-Options + nosniff nas páginas",
+    page.headers.get("x-frame-options") === "DENY" &&
+      page.headers.get("x-content-type-options") === "nosniff",
+    `xfo=${page.headers.get("x-frame-options")} nosniff=${page.headers.get("x-content-type-options")}`,
+  );
+  const apiProbe = await fetch(BASE + "/api/health");
+  check("health 200", apiProbe.status === 200, `status=${apiProbe.status}`);
+  check(
+    "headers também em /api",
+    apiProbe.headers.get("x-content-type-options") === "nosniff",
+    `nosniff=${apiProbe.headers.get("x-content-type-options")}`,
+  );
+  // Origin cross-site no login → 403 (CSRF de login)
+  const csrf = await fetch(BASE + "/api/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: "https://evil.example" },
+    body: JSON.stringify({ email: "prof@criatreino.dev", password: "demo12345" }),
+  });
+  check("login com Origin hostil → 403", csrf.status === 403, `status=${csrf.status}`);
+
+  // Zera de novo para não sujar as próximas execuções/visualizações
+  try {
+    await resetTestState();
+  } catch {
+    /* melhor esforço */
+  }
 
   // 10. Sem sessão
   log("\n[10] Proteção de rotas");

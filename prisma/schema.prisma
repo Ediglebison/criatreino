@@ -61,6 +61,18 @@ enum Equipment {
   OTHER
 }
 
+enum Plan {
+  FREE
+  PRO
+}
+
+// Status de uma tentativa de geração de treino (conta para a cota mensal)
+enum UsageStatus {
+  PENDING // reservada; se a geração falhar, é estornada
+  COMPLETED
+  FAILED
+}
+
 enum WorkoutStatus {
   DRAFT
   FINAL
@@ -80,6 +92,11 @@ model User {
   role         Role
   locale       String   @default("pt-BR")
 
+  // Cobrança (Stripe)
+  plan                 Plan    @default(FREE)
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String?
+
   professorId String?
   professor   User?    @relation("StudentOf", fields: [professorId], references: [id], onDelete: SetNull)
   students    User[]   @relation("StudentOf")
@@ -90,11 +107,44 @@ model User {
   workoutsCreated   Workout[] @relation("WorkoutCreator")
   assignments       Assignment[] @relation("StudentAssignments")
   assignmentsMade   Assignment[] @relation("Assigner")
+  usageRecords      UsageRecord[] @relation("UsageRecords")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([professorId])
+}
+
+// Contador de janela fixa para rate limiting (login, cadastro, IA).
+// Funciona em serverless: incremento atômico via INSERT ... ON CONFLICT.
+model RateLimit {
+  key         String    // ex.: "login:ip:1.2.3.4", "login:email:ana@x.com"
+  windowStart DateTime  // início da janela (bloco fixo de N segundos)
+  count       Int       @default(0)
+  expiresAt   DateTime  // limpeza por TTL
+
+  @@id([key, windowStart])
+  @@index([expiresAt])
+}
+
+// Uma tentativa de geração de treino por mês (conta para a cota do plano)
+model UsageRecord {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation("UsageRecords", fields: [userId], references: [id], onDelete: Cascade)
+  status    UsageStatus  @default(PENDING)
+
+  // Mês de referência da cobrança (início do mês, UTC) — imune a timezone
+  periodStart DateTime
+  createdAt   DateTime    @default(now())
+  completedAt DateTime?
+
+  // Guarda de auditoria: o que foi gerado e de qual fonte
+  source     String? // "AI" | "SIMULATED"
+  workoutId  String? // preenche ao salvar o treino
+
+  @@index([userId, periodStart])
+  @@index([status])
 }
 
 // Questionário + medidas corporais do atleta (alvo do treino)

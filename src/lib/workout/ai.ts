@@ -70,8 +70,15 @@ function buildAthleteBlock(
   const label = <T extends string>(map: Record<string, string>, key: T) =>
     map[key] ?? key;
 
+  // Texto livre do atleta é dado NÃO confiável no prompt (superfície de
+  // prompt injection): trunca e marca como dado bruto, sem instruções.
+  const freeText = (value: string, max = 300) => {
+    const clean = value.replace(/[\r\n]+/g, " ").trim();
+    return clean ? clean.slice(0, max) : null;
+  };
+
   return {
-    name: athleteName,
+    name: freeText(athleteName, 120) ?? "—",
     age: ageFromBirthDate(profile.birthDate),
     sex: label(m.sex, profile.sex),
     heightCm: profile.heightCm,
@@ -79,14 +86,14 @@ function buildAthleteBlock(
     bodyFatPct: profile.bodyFatPct,
     circumferencesCm: profile.measurements,
     goal: `${profile.goal} (${label(m.goals, profile.goal)})`,
-    goalNotes: profile.goalNotes || null,
+    goalNotes: freeText(profile.goalNotes),
     limitations: profile.limitations.map((l) => label(m.limitations, l)),
-    limitationNotes: profile.limitationNotes || null,
+    limitationNotes: freeText(profile.limitationNotes),
     daysPerWeek: profile.daysPerWeek,
     sessionMinutes: profile.sessionMinutes,
     experience: `${profile.experience} (${label(m.experience, profile.experience)})`,
     availableEquipment: profile.equipment.map((e) => label(m.equipment, e)),
-    observations: profile.observations || null,
+    observations: freeText(profile.observations),
   };
 }
 

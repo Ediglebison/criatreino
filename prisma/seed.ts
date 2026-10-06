@@ -117,7 +117,15 @@ async function seedUsers() {
 async function main() {
   console.log("Seed do CrIA Treino...");
   await seedExercises();
-  await seedUsers();
+  // Contas demo (senha publicada no README) nunca caem em produção.
+  // Força com SEED_DEMO=1 se realmente precisar (ex.: staging de demo).
+  if (process.env.NODE_ENV === "production" && process.env.SEED_DEMO !== "1") {
+    console.log(
+      "Produção detectada: catálogo semeado, contas demo OMITIDAS (SEED_DEMO=1 para forçar).",
+    );
+  } else {
+    await seedUsers();
+  }
   console.log("OK ✔");
 }
 

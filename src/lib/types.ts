@@ -124,12 +124,12 @@ export const draftExerciseSchema = z.object({
 export const draftDaySchema = z.object({
   label: z.string().min(1).max(120),
   focus: z.string().max(200).nullable().optional(),
-  exercises: z.array(draftExerciseSchema).min(1),
+  exercises: z.array(draftExerciseSchema).min(1).max(15),
 });
 
 export const workoutDraftSchema = z.object({
   title: z.string().min(1).max(120),
-  days: z.array(draftDaySchema).min(1),
+  days: z.array(draftDaySchema).min(1).max(7),
 });
 
 export type DraftExercise = z.infer<typeof draftExerciseSchema>;

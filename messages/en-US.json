@@ -69,10 +69,22 @@
     },
     "how": {
       "title": "How it works",
-      "step1": { "title": "1. Set up the profile", "description": "Enter measurements, goal, limitations and how many days per week the student trains." },
-      "step2": { "title": "2. Generate with AI", "description": "The AI suggests a workout split with sets, reps and rest." },
-      "step3": { "title": "3. Review and swap", "description": "Use the checklist to replace unfeasible exercises with equivalents for the same muscle group." },
-      "step4": { "title": "4. Export", "description": "Send it to the student or download the PDF and start training." }
+      "step1": {
+        "title": "1. Set up the profile",
+        "description": "Enter measurements, goal, limitations and how many days per week the student trains."
+      },
+      "step2": {
+        "title": "2. Generate with AI",
+        "description": "The AI suggests a workout split with sets, reps and rest."
+      },
+      "step3": {
+        "title": "3. Review and swap",
+        "description": "Use the checklist to replace unfeasible exercises with equivalents for the same muscle group."
+      },
+      "step4": {
+        "title": "4. Export",
+        "description": "Send it to the student or download the PDF and start training."
+      }
     },
     "cta": {
       "title": "Ready to build the next workout?",
@@ -371,7 +383,12 @@
   "students": {
     "title": "Students",
     "subtitle": "Students linked to your account.",
-    "table": { "name": "Student", "email": "Email", "workouts": "Workouts", "joined": "Joined" },
+    "table": {
+      "name": "Student",
+      "email": "Email",
+      "workouts": "Workouts",
+      "joined": "Joined"
+    },
     "newWorkoutFor": "New workout",
     "empty": "You don't have students yet.",
     "emptyHint": "Add a student to send workouts straight to their account.",
@@ -412,6 +429,28 @@
     "internal": "Internal error. Please try again.",
     "required": "Required field.",
     "invalidNumber": "Enter a valid number.",
-    "selectEquipment": "Select at least one piece of equipment."
+    "selectEquipment": "Select at least one piece of equipment.",
+    "rateLimited": "Too many attempts. Wait {seconds}s and try again.",
+    "quotaExceeded": "You've reached your limit of {limit} generations this month. Upgrade to continue."
+  },
+  "billing": {
+    "title": "Plan & usage",
+    "plan": "Current plan",
+    "planFree": "Free",
+    "planPro": "Pro",
+    "usage": "Generations this month",
+    "usageValue": "{used} of {limit}",
+    "renews": "Renews on {date}",
+    "upgrade": "Upgrade to Pro",
+    "upgrading": "Redirecting…",
+    "checkoutError": "Couldn't start checkout. Please try again.",
+    "billingDisabled": "Payments are unavailable right now.",
+    "quotaNotice": "{remaining} of {limit} generations left this month.",
+    "quotaOut": "Monthly limit reached. Upgrade to generate more workouts.",
+    "success": "Subscription active! Welcome to the Pro plan.",
+    "cancelled": "Checkout canceled — you're still on the free plan.",
+    "checkout": "Subscribe to Pro",
+    "perMonth": "/month",
+    "benefits": "Unlimited generations, all students and exports unlocked."
   }
 }

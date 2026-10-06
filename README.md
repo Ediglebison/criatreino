@@ -53,16 +53,30 @@ npm run dev             # http://localhost:3000
 | `aluno@criatreino.dev` | Aluno (vinculado) | `demo12345` |
 | `maria@criatreino.dev` | Aluna (vinculada) | `demo12345` |
 
+> **Produção:** quando `NODE_ENV=production` o seed semeia só o catálogo de
+> exercícios e **omite as contas demo** (senha publicada). Para forçar em um
+> staging, use `SEED_DEMO=1 npm run db:seed`.
+
 ## Variáveis de ambiente
 
 | Variável | Descrição |
 | --- | --- |
-| `DATABASE_URL` | Connection string do PostgreSQL |
-| `AUTH_SECRET` | Segredo do JWT da sessão (`openssl rand -base64 32`) |
+| `DATABASE_URL` | Connection string do PostgreSQL (em produção: `?sslmode=require`) |
+| `AUTH_SECRET` | Segredo do JWT da sessão, **mín. 32 caracteres** (`openssl rand -base64 48`) |
 | `OPENAI_API_KEY` | Se **vazia**, o gerador cai para o **modo simulado** (regras locais) |
 | `OPENAI_MODEL` | Modelo usado (padrão `gpt-4o-mini`) |
 | `OPENAI_BASE_URL` | Endpoint compatível com OpenAI (Groq, OpenRouter, Gemini, Ollama…). Vazio = `api.openai.com` |
-| `NEXT_PUBLIC_APP_URL` | URL pública do app |
+| `NEXT_PUBLIC_APP_URL` | URL pública do app (fallback das URLs de checkout Stripe) |
+| `STRIPE_SECRET_KEY` | Chave da API Stripe. **Vazia** = upgrade desativado (503 `billingDisabled`) |
+| `STRIPE_PRICE_ID` | Preço recorrente mensal do plano PRO |
+| `STRIPE_WEBHOOK_SECRET` | Segredo do endpoint de webhook (`whsec_...`) |
+| `BILLING_FREE_MONTHLY_LIMIT` | Gerações/mês do plano grátis (padrão `3`) |
+| `BILLING_PRO_MONTHLY_LIMIT` | Gerações/mês do plano PRO (padrão `500`) |
+| `PG_POOL_MAX` | Conexões por instância do pool (padrão `5`) |
+
+Variáveis obrigatórias são validadas no boot (`src/lib/env.ts`): em produção um
+deploy sem `AUTH_SECRET`/`DATABASE_URL` falha no log de inicialização em vez de
+virar 500 silencioso.
 
 ### Provedor de IA gratuito (Groq)
 
@@ -89,12 +103,14 @@ automaticamente em `json_object` com a schema no prompt.
 
 ```bash
 npm run dev          # servidor de desenvolvimento
-npm run build        # build de produção
+npm run build        # build de produção (prisma generate + next build)
 npm run start        # produção
 npm run lint         # ESLint
+npm run test         # typecheck (tsc) + lint
 npm run db:generate  # regenera o Prisma Client (src/generated/prisma)
-npm run db:migrate   # cria/aplica migrações (prisma migrate dev)
-npm run db:seed      # seed: exercícios + usuários demo
+npm run db:migrate   # cria/aplica migrações locais (prisma migrate dev)
+npm run db:deploy    # aplica migrações pendentes (prisma migrate deploy)
+npm run db:seed      # seed: exercícios + usuários demo (omitidos em produção)
 npm run db:studio    # Prisma Studio
 npm run test:e2e     # smoke test E2E de API/pages (exige `npm run dev` ativo)
 npm run test:ui      # testes de UI no browser headless (Playwright)
@@ -185,6 +201,35 @@ src/
 - Toda rota de API **também** valida a sessão e as permissões (auto do professor/aluno,
   visibilidade do treino: dono, criador ou assignment) — não depende só do proxy.
 - Perfis e alunos só são acessíveis/geráveis pelo professor vinculado.
+- **Rate limiting** persistido no Postgres (`src/lib/rate-limit.ts`): login
+  20/min por IP e 5/15min por e-mail, cadastro 10/h por IP, geração 10/min por IP.
+- **Cota de gerações** atômica no banco (`src/lib/billing/quota.ts`): reserva
+  `INSERT...WHERE count < limit` (sem corrida), `402 quotaExceeded` com status
+  para a UI, estorno em falha de geração.
+- **CSRF de login**: `Origin`/`Referer` precisam bater com a origem efetiva
+  (considerando proxy reverso) nas rotas de login/cadastro.
+- **Role check**: geração e criação de treino exigem `PROFESSOR` (403 caso
+  contrário).
+- Cabeçalhos de segurança em todas as respostas via `next.config.ts`
+  (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS
+  em produção).
+- Redirecionamento pós-login aceita apenas caminhos internos (`safeNextPath`).
+- Texto livre do atleta é truncado no prompt da IA (superfície de prompt
+  injection), e a saída só aceita slugs do catálogo.
+- `src/lib/env.ts` valida `AUTH_SECRET`/`DATABASE_URL` no boot (falha cedo em
+  produção); `GET /api/health` expõe o status do banco para monitoramento.
+
+## Faturamento (Stripe)
+
+- **FREE**: 3 gerações/mês (`BILLING_FREE_MONTHLY_LIMIT`); **PRO**: 500/mês
+  (`BILLING_PRO_MONTHLY_LIMIT`). Período mensal em UTC (dia 1).
+- Sem chaves Stripe, o sistema degrada: card de upgrade escondido e
+  `/api/billing/checkout` responde `503 billingDisabled`.
+- Webhook `/api/billing/webhook` verifica a assinatura (`STRIPE_WEBHOOK_SECRET`)
+  e processa `checkout.session.completed`, `customer.subscription.updated` e
+  `customer.subscription.deleted` para sincronizar `User.plan`.
+- Configuração local da CLI (opcional):
+  `stripe listen --forward-to localhost:3000/api/billing/webhook`.
 
 ## API (resumo)
 
@@ -195,12 +240,36 @@ src/
 | POST | `/api/auth/logout` | Logout |
 | GET/POST | `/api/students` | Lista/cadastra alunos do professor |
 | GET/PUT | `/api/profiles?userId=` | Lê/salva perfil do atleta |
-| POST | `/api/workouts/generate` | Gera sugestão (IA ou simulado) |
-| GET/POST | `/api/workouts` | Lista/salva treinos |
+| POST | `/api/workouts/generate` | Gera sugestão (IA ou simulado) — professor, cota 402 |
+| GET/POST | `/api/workouts` | Lista/salva treinos (criação: professor) |
 | GET | `/api/workouts/[id]` | Detalhe (dias + exercícios) |
 | POST | `/api/workouts/[id]/assign` | Envia para aluno |
 | GET | `/api/workouts/[id]/pdf` | Exporta PDF |
 | GET | `/api/exercises?muscleGroup=&exclude=` | Alternativas de substituição |
+| GET | `/api/billing/status` | Plano, cota usada/restante e reset |
+| POST | `/api/billing/checkout` | Cria sessão de checkout Stripe |
+| POST | `/api/billing/webhook` | Webhook Stripe (assinatura verificada) |
+| GET | `/api/health` | Health check (200 ok / 503 banco fora) |
+
+## Produção (Vercel + Postgres gerenciado)
+
+1. **Banco** (Neon ou Supabase): criar o projeto e anotar o connection string —
+   precisa de `?sslmode=require` (provedores gerenciados recusam conexão em claro).
+2. **Migrações**: aplique uma vez a partir da sua máquina:
+   `DATABASE_URL="..." npm run db:deploy` (em CI/Vercel, o mesmo comando antes
+   do build). Nunca use `db:migrate` (dev) em produção.
+3. **Seed**: `DATABASE_URL="..." npm run db:seed` — em produção semeia **só o
+   catálogo** (contas demo omitidas; `SEED_DEMO=1` para forçar).
+4. **Vercel**: importe o repositório (framework Next.js). Build = `npm run build`
+   (já roda `prisma generate`), variáveis de ambiente do `.env.example` no
+   painel, `AUTH_SECRET` com ≥32 caracteres.
+5. **Stripe**: crie um produto/ preço recorrente mensal, preencha
+   `STRIPE_SECRET_KEY`/`STRIPE_PRICE_ID`, e um endpoint de webhook apontando
+   para `https://<domínio>/api/billing/webhook` com os eventos
+   `checkout.session.completed`, `customer.subscription.updated` e
+   `customer.subscription.deleted` — copie o `whsec_` para
+   `STRIPE_WEBHOOK_SECRET`.
+6. **Health**: configure um uptime em `GET /api/health` (200 = ok, 503 = banco).
 
 ## Próximos passos (app mobile)
 

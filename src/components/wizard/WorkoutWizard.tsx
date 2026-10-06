@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -18,6 +18,7 @@ import {
   type CatalogExercise,
   type Equipment,
 } from "@/lib/types";
+import type { QuotaInfo } from "@/components/BillingCard";
 import {
   EMPTY_PROFILE,
   ProfileForm,
@@ -58,6 +59,7 @@ export function WorkoutWizard({
         ? "profile"
         : "athlete",
   );
+  const [quota, setQuota] = useState<QuotaInfo | null>(null);
 
   const initialAthlete = preselectedStudent ?? { id: me.id, name: me.name };
   const hasInitialProfile = Boolean(initialProfile) && preselectedStudent === null;
@@ -81,6 +83,21 @@ export function WorkoutWizard({
   const [catalog, setCatalog] = useState<CatalogExercise[]>([]);
   const [source, setSource] = useState<"AI" | "SIMULATED">("AI");
   const [saving, setSaving] = useState(false);
+
+  // Busca a cota mensal ao entrar na etapa de geração (professor)
+  useEffect(() => {
+    if (step !== "generate" || !isProfessor || quota) return;
+    let cancelled = false;
+    fetch("/api/billing/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { quota?: QuotaInfo } | null) => {
+        if (!cancelled && data?.quota) setQuota(data.quota);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [step, isProfessor, quota]);
 
   /** Avança para o perfil, carregando os dados do atleta se necessário. */
   async function continueFromAthlete(next?: { id: string; name: string }) {
@@ -176,6 +193,16 @@ export function WorkoutWizard({
         }),
       });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 402) {
+        // Cota mensal esgotada — mensagem específica com o limite do plano
+        const limit = (data as { quota?: { limit?: number } }).quota?.limit;
+        setStepError(
+          typeof limit === "number"
+            ? t("errors.quotaExceeded", { limit })
+            : t("errors.quotaExceeded", { limit: 3 }),
+        );
+        return;
+      }
       if (!res.ok) {
         setStepError(
           data.error === "generationFailed"
@@ -184,6 +211,7 @@ export function WorkoutWizard({
         );
         return;
       }
+      if (data.quota) setQuota(data.quota as QuotaInfo);
       setDraft(data.draft as ReviewDraft);
       setCatalog(data.catalog as CatalogExercise[]);
       setSource(data.source as "AI" | "SIMULATED");
@@ -367,6 +395,24 @@ export function WorkoutWizard({
               </SummaryItem>
             </dl>
 
+            {quota && quota.plan === "FREE" && (
+              <p
+                className={`mt-4 rounded-lg border px-3 py-2 text-sm ${
+                  quota.remaining === 0
+                    ? "border-red-200 bg-red-50 text-red-700"
+                    : "border-zinc-200 bg-zinc-50 text-zinc-600"
+                }`}
+                data-testid="quota-remaining"
+              >
+                {quota.remaining === 0
+                  ? t("billing.quotaOut")
+                  : t("billing.quotaNotice", {
+                      remaining: quota.remaining,
+                      limit: quota.limit,
+                    })}
+              </p>
+            )}
+
             {stepError && (
               <Alert className="mt-4">
                 {stepError}{" "}
@@ -384,7 +430,12 @@ export function WorkoutWizard({
               <Button variant="outline" onClick={() => setStep("profile")}>
                 {t("common.back")}
               </Button>
-              <Button onClick={generate} loading={busy}>
+              <Button
+                onClick={generate}
+                loading={busy}
+                disabled={!!quota && quota.remaining === 0}
+                data-testid="generate-btn"
+              >
                 {busy
                   ? t("wizard.generateStep.generating")
                   : t("wizard.generateStep.button")}
@@ -600,7 +651,7 @@ function AthleteStep({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
               />
             </Field>
             <div className="flex gap-2 sm:col-span-3">

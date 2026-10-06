@@ -6,6 +6,8 @@ import { athleteProfileSchema, type Locale } from "@/lib/types";
 import { generateWorkout } from "@/lib/workout/generate";
 import { GenerationError } from "@/lib/workout/error";
 import { getCatalogForProfile } from "@/lib/workout/catalog";
+import { reserveQuota, settleQuota } from "@/lib/billing/quota";
+import { clientIp, consume, tooManyRequests } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
 
@@ -15,11 +17,30 @@ const bodySchema = z.object({
   locale: z.enum(["pt-BR", "en-US"]).default("pt-BR"),
 });
 
+// Teto por IP além da cota mensal: segura rajadas de quem tenta furar a
+// cota com requisições paralelas baratas (ex.: modo simulado).
+const IP_MAX = 10;
+const IP_WINDOW_S = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    // Geração é função do professor (aluno não prescreve treino).
+    if (session.role !== "PROFESSOR") {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+
+    const byIp = await consume(
+      `generate:ip:${clientIp(request)}`,
+      IP_MAX,
+      IP_WINDOW_S,
+    );
+    if (!byIp.allowed) {
+      return tooManyRequests(byIp.retryAfterSeconds);
     }
 
     const parsed = bodySchema.safeParse(await request.json().catch(() => null));
@@ -51,14 +72,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "emptyCatalog" }, { status: 400 });
     }
 
-    const { draft, source } = await generateWorkout({
-      profile,
-      athleteName: athlete.name,
-      locale: locale as Locale,
-      catalog,
-    });
+    // Reserva atômica da cota mensal; sem cota livre → 402 com o status
+    // para a UI mostrar o contador e o botão de upgrade.
+    const reservation = await reserveQuota(session.id);
+    if (!reservation.ok) {
+      return NextResponse.json(
+        { error: "quotaExceeded", quota: reservation.status },
+        { status: 402 },
+      );
+    }
 
-    return NextResponse.json({ draft, source, catalog });
+    let draft;
+    let source;
+    try {
+      ({ draft, source } = await generateWorkout({
+        profile,
+        athleteName: athlete.name,
+        locale: locale as Locale,
+        catalog,
+      }));
+    } catch (error) {
+      // Geração falhou → estorna a reserva (o professor não perde cota).
+      await settleQuota(reservation.recordId, "FAILED");
+      throw error;
+    }
+
+    await settleQuota(reservation.recordId, "COMPLETED", source);
+
+    return NextResponse.json({
+      draft,
+      source,
+      catalog,
+      quota: reservation.status,
+    });
   } catch (error) {
     if (error instanceof GenerationError) {
       console.error("[generate]", error.message);

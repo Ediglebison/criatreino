@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 const createSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.email().max(200),
-  password: z.string().min(6).max(200),
+  password: z.string().min(8).max(200),
 });
 
 /** GET /api/students — alunos vinculados ao professor da sessão. */

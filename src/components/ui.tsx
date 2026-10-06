@@ -211,11 +211,12 @@ export function Alert({
   tone = "danger",
   children,
   className = "",
+  ...props
 }: {
   tone?: "danger" | "success" | "info";
   children: ReactNode;
   className?: string;
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
   const tones = {
     danger: "border-red-200 bg-red-50 text-red-800",
     success: "border-emerald-200 bg-emerald-50 text-emerald-800",
@@ -225,6 +226,7 @@ export function Alert({
     <div
       role="alert"
       className={`rounded-lg border px-4 py-3 text-sm ${tones[tone]} ${className}`}
+      {...props}
     >
       {children}
     </div>

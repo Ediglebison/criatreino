@@ -40,7 +40,9 @@ export async function verifySession(
       id: payload.sub,
       email: String(payload.email ?? ""),
       name: String(payload.name ?? ""),
-      role: payload.role === "ALUNO" ? "ALUNO" : "PROFESSOR",
+      // Fail-closed: role desconhecida/malformada vira ALUNO (menor
+      // privilégio), nunca PROFESSOR.
+      role: payload.role === "PROFESSOR" ? "PROFESSOR" : "ALUNO",
       locale: String(payload.locale ?? "pt-BR"),
       professorId: (payload.professorId as string | null) ?? null,
     };
