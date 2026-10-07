@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Um push novo cancela a execução anterior da mesma branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Typecheck, lint e i18n
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # postinstall roda `prisma generate` (o client é gitignored)
+      - run: npm ci
+
+      - run: npm run test
+
+  test:
+    name: E2E e UI
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: criatreino
+          POSTGRES_PASSWORD: criatreino
+          POSTGRES_DB: criaotreino
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U criatreino"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Navegador do Playwright cacheado entre execuções
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - run: npm ci
+
+      # O app e as suítes leem DATABASE_URL/AUTH_SECRET do .env (gitignored).
+      # Sem OPENAI_API_KEY o gerador cai no modo SIMULADO — CI não depende de IA.
+      - name: Criar .env
+        run: |
+          {
+            echo "DATABASE_URL=postgresql://criatreino:criatreino@localhost:5432/criaotreino?schema=public"
+            echo "AUTH_SECRET=$(openssl rand -base64 48)"
+            echo "NEXT_PUBLIC_APP_URL=http://localhost:3000"
+          } > .env
+
+      - name: Aplicar migrações
+        run: npm run db:deploy
+
+      - name: Seed (catálogo + usuários demo)
+        run: npm run db:seed
+
+      - name: Build de produção
+        run: npm run build
+
+      # Sobe em produção (next start) e espera o health check responder.
+      - name: Iniciar servidor
+        run: |
+          nohup npm run start > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/health > /dev/null; then
+              echo "servidor pronto"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::servidor não respondeu em 60s"
+          cat server.log
+          exit 1
+
+      - name: Smoke test E2E (API + páginas)
+        run: npm run test:e2e
+
+      - name: Testes de UI (Playwright)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:ui
+
+      - name: Log do servidor
+        if: failure()
+        run: cat server.log || true
+
+      - name: Artefatos do Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore

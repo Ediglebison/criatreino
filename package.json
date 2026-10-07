@@ -16,7 +16,8 @@
     "db:studio": "prisma studio",
     "test:e2e": "node scripts/e2e.mjs",
     "test:ui": "playwright test",
-    "test": "tsc --noEmit && eslint ."
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "test": "tsc --noEmit && eslint . && node scripts/check-i18n.mjs"
   },
   "engines": {
     "node": ">=22.12"
