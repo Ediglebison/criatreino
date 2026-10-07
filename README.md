@@ -67,11 +67,15 @@ npm run dev             # http://localhost:3000
 | `OPENAI_MODEL` | Modelo usado (padrão `gpt-4o-mini`) |
 | `OPENAI_BASE_URL` | Endpoint compatível com OpenAI (Groq, OpenRouter, Gemini, Ollama…). Vazio = `api.openai.com` |
 | `NEXT_PUBLIC_APP_URL` | URL pública do app (fallback das URLs de checkout Stripe) |
-| `STRIPE_SECRET_KEY` | Chave da API Stripe. **Vazia** = upgrade desativado (503 `billingDisabled`) |
-| `STRIPE_PRICE_ID` | Preço recorrente mensal do plano PRO |
+| `STRIPE_SECRET_KEY` | Chave da API Stripe. **Vazia** = planos pagos desativados (503 `billingDisabled`) |
+| `STRIPE_PRICE_ID_BASIC` | Preço recorrente mensal do plano **Basic** (R$ 8,90 → 20 gerações) |
+| `STRIPE_PRICE_ID_PRO` | Preço recorrente mensal do plano **Pro** (R$ 29,90 → 100 gerações) |
+| `STRIPE_PRICE_ID_ULTIMATE` | Preço recorrente mensal do plano **Ultimate** (R$ 119,90 → 500 gerações) |
 | `STRIPE_WEBHOOK_SECRET` | Segredo do endpoint de webhook (`whsec_...`) |
 | `BILLING_FREE_MONTHLY_LIMIT` | Gerações/mês do plano grátis (padrão `3`) |
-| `BILLING_PRO_MONTHLY_LIMIT` | Gerações/mês do plano PRO (padrão `500`) |
+| `BILLING_BASIC_MONTHLY_LIMIT` | Gerações/mês do plano Basic (padrão `20`) |
+| `BILLING_PRO_MONTHLY_LIMIT` | Gerações/mês do plano Pro (padrão `100`) |
+| `BILLING_ULTIMATE_MONTHLY_LIMIT` | Gerações/mês do plano Ultimate (padrão `500`) |
 | `PG_POOL_MAX` | Conexões por instância do pool (padrão `5`) |
 
 Variáveis obrigatórias são validadas no boot (`src/lib/env.ts`): em produção um
@@ -114,6 +118,9 @@ npm run db:seed      # seed: exercícios + usuários demo (omitidos em produçã
 npm run db:studio    # Prisma Studio
 npm run test:e2e     # smoke test E2E de API/pages (exige `npm run dev` ativo)
 npm run test:ui      # testes de UI no browser headless (Playwright)
+npm run test:billing        # smoke do webhook Stripe (assinatura sintética + planos)
+npm run test:billing:checkout  # checkout E2E contra a API real do Stripe (teste)
+npm run stripe:setup  # cria produto/preço dos 3 planos e grava STRIPE_PRICE_ID_* no .env
 npx tsx scripts/probe-ai.ts   # diagnóstico: 1 chamada real ao provedor de IA
 ```
 
@@ -143,6 +150,25 @@ npx playwright install chromium   # uma vez
 npm run dev                       # terminal 1
 npm run test:ui                   # terminal 2 (BASE_URL=http://localhost:3000)
 ```
+
+### Testes de billing (Stripe)
+
+Dois smoke tests dedicados (ambos exigem servidor ativo; use `BASE`/`BASE_URL`
+para outra porta):
+
+- `npm run test:billing` — assina eventos de webhook sintéticos com o mesmo
+  HMAC do Stripe (`STRIPE_WEBHOOK_SECRET` do `.env`) e valida: rejeição de
+  assinatura ausente/inválida, ativação por `metadata.plan`, troca de plano
+  pelo preço da assinatura, guarda anti-downgrade com preço não mapeado,
+  volta para `FREE` no cancelamento, limites de cota por plano (20/100/500/3)
+  e evento de usuário inexistente sem 500. Restaura o professor demo ao final.
+- `npm run test:billing:checkout` — roda contra a **API real do Stripe em modo
+  teste**: cria sessão de Checkout (preço/metadata conferidos), 400 para plano
+  inválido, 409 `samePlan` e upgrades BASIC → PRO → ULTIMATE **na mesma
+  assinatura** (prorata, sem duplicar cobrança). Apaga o customer/assinatura
+  de teste ao final.
+
+Sem chaves Stripe no `.env`, os testes saem com instrução (`stripe:setup`).
 
 ## Estrutura
 
@@ -221,13 +247,26 @@ src/
 
 ## Faturamento (Stripe)
 
-- **FREE**: 3 gerações/mês (`BILLING_FREE_MONTHLY_LIMIT`); **PRO**: 500/mês
-  (`BILLING_PRO_MONTHLY_LIMIT`). Período mensal em UTC (dia 1).
-- Sem chaves Stripe, o sistema degrada: card de upgrade escondido e
+- Planos e gerações/mês (período mensal em UTC, dia 1):
+
+  | Plano | Preço | Gerações/mês | Env do limite |
+  | --- | --- | --- | --- |
+  | FREE | — | 3 | `BILLING_FREE_MONTHLY_LIMIT` |
+  | BASIC | R$ 8,90 | 20 | `BILLING_BASIC_MONTHLY_LIMIT` |
+  | PRO | R$ 29,90 | 100 | `BILLING_PRO_MONTHLY_LIMIT` |
+  | ULTIMATE | R$ 119,90 | 500 | `BILLING_ULTIMATE_MONTHLY_LIMIT` |
+
+  Os preços são exibidos pela UI (`messages/*.json`); os valores cobrados vêm
+  dos `STRIPE_PRICE_ID_*` — mantenha os dois em sincronia.
+- Sem chaves Stripe, o sistema degrada: planos pagos escondidos e
   `/api/billing/checkout` responde `503 billingDisabled`.
+- Checkout: `POST /api/billing/checkout` com `{ "plan": "BASIC" | "PRO" |
+  "ULTIMATE" }`. FREE cria uma sessão de Checkout; assinante ativo troca o
+  preço da mesma assinatura (prorata via Stripe).
 - Webhook `/api/billing/webhook` verifica a assinatura (`STRIPE_WEBHOOK_SECRET`)
   e processa `checkout.session.completed`, `customer.subscription.updated` e
-  `customer.subscription.deleted` para sincronizar `User.plan`.
+  `customer.subscription.deleted` para sincronizar `User.plan` (plano vem do
+  metadata do checkout/preço da assinatura).
 - Configuração local da CLI (opcional):
   `stripe listen --forward-to localhost:3000/api/billing/webhook`.
 
@@ -263,11 +302,12 @@ src/
 4. **Vercel**: importe o repositório (framework Next.js). Build = `npm run build`
    (já roda `prisma generate`), variáveis de ambiente do `.env.example` no
    painel, `AUTH_SECRET` com ≥32 caracteres.
-5. **Stripe**: crie um produto/ preço recorrente mensal, preencha
-   `STRIPE_SECRET_KEY`/`STRIPE_PRICE_ID`, e um endpoint de webhook apontando
-   para `https://<domínio>/api/billing/webhook` com os eventos
-   `checkout.session.completed`, `customer.subscription.updated` e
-   `customer.subscription.deleted` — copie o `whsec_` para
+5. **Stripe**: crie um produto com **3 preços recorrentes mensais** (BRL) —
+   Basic R$ 8,90, Pro R$ 29,90 e Ultimate R$ 119,90 — preencha
+   `STRIPE_SECRET_KEY` e os `STRIPE_PRICE_ID_{BASIC,PRO,ULTIMATE}`, e um
+   endpoint de webhook apontando para `https://<domínio>/api/billing/webhook`
+   com os eventos `checkout.session.completed`, `customer.subscription.updated`
+   e `customer.subscription.deleted` — copie o `whsec_` para
    `STRIPE_WEBHOOK_SECRET`.
 6. **Health**: configure um uptime em `GET /api/health` (200 = ok, 503 = banco).
 

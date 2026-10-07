@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import { prisma } from "@/lib/db";
-import { getStripe, webhookEnabled } from "@/lib/billing/stripe";
+import { getStripe, webhookEnabled, planForPriceId } from "@/lib/billing/stripe";
+import type { Plan } from "@/lib/billing/limits";
 
 export const maxDuration = 30;
 
@@ -10,10 +11,19 @@ export const maxDuration = 30;
  * Assinatura verificada com STRIPE_WEBHOOK_SECRET; sem configuração → 503.
  *
  * Eventos tratados:
- * - checkout.session.completed → ativa PRO e grava customer/subscription
- * - customer.subscription.updated → reage a status (past_due, canceled…)
+ * - checkout.session.completed → ativa o plano do metadata e grava customer/subscription
+ * - customer.subscription.updated → reage ao preço ativo e ao status (past_due…)
  * - customer.subscription.deleted → volta para FREE
  */
+
+/** Preço da assinatura → plano interno (metadata primeiro, preço como base). */
+function resolvePlan(subscription: Stripe.Subscription): Plan | null {
+  const meta = subscription.metadata?.plan;
+  if (meta === "BASIC" || meta === "PRO" || meta === "ULTIMATE") return meta;
+  const priceId = subscription.items?.data?.[0]?.price?.id;
+  return priceId ? planForPriceId(priceId) : null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const stripe = await getStripe();
@@ -27,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "missingSignature" }, { status: 400 });
     }
 
-    // Corpo bruto obrigário para a verificação de assinatura.
+    // Corpo bruto obrigatório para a verificação de assinatura.
     const payload = await request.text();
     let event: Stripe.Event;
     try {
@@ -46,13 +56,31 @@ export async function POST(request: NextRequest) {
           typeof session.customer === "string" ? session.customer : null;
         const subscriptionId =
           typeof session.subscription === "string" ? session.subscription : null;
+
+        // Plano escolhido no checkout (gravação nova); sem metadata, deduz
+        // pelo preço da assinatura; ainda sem sorte → PRO (compat legado).
+        let plan = session.metadata?.plan as Plan | undefined;
+        if (
+          (plan !== "BASIC" && plan !== "PRO" && plan !== "ULTIMATE") &&
+          subscriptionId
+        ) {
+          try {
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            plan = resolvePlan(sub) ?? undefined;
+          } catch (error) {
+            console.error("[billing:webhook] falha ao ler assinatura", error);
+          }
+        }
+
         if (userId) {
-          await prisma.user.update({
+          // updateMany: usuário removido não deve estourar 500 (o Stripe
+          // reenviaria o evento para sempre).
+          await prisma.user.updateMany({
             where: { id: userId },
             data: {
-              plan: "PRO",
-              stripeCustomerId: customerId ?? undefined,
-              stripeSubscriptionId: subscriptionId ?? undefined,
+              plan: plan === "BASIC" || plan === "ULTIMATE" ? plan : "PRO",
+              ...(customerId ? { stripeCustomerId: customerId } : {}),
+              ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
             },
           });
         }
@@ -68,16 +96,26 @@ export async function POST(request: NextRequest) {
             : null;
         const active = ["active", "trialing"].includes(subscription.status);
         const isDelete = event.type === "customer.subscription.deleted";
+        const resolved = resolvePlan(subscription);
 
         if (customerId) {
-          // Ativa/desativa pelo customerId (sobrevive a troca de subscription)
-          await prisma.user.updateMany({
-            where: { stripeCustomerId: customerId },
-            data: {
-              plan: active && !isDelete ? "PRO" : "FREE",
-              ...(isDelete ? { stripeSubscriptionId: null } : {}),
-            },
-          });
+          // Ativa/desativa pelo customerId (sobrevive a troca de subscription).
+          // Assinatura ativa com preço não mapeável não rebaixa: mantém o atual.
+          const data =
+            active && !isDelete
+              ? resolved
+                ? { plan: resolved }
+                : null
+              : {
+                  plan: "FREE" as const,
+                  ...(isDelete ? { stripeSubscriptionId: null } : {}),
+                };
+          if (data) {
+            await prisma.user.updateMany({
+              where: { stripeCustomerId: customerId },
+              data,
+            });
+          }
         }
         break;
       }

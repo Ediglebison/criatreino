@@ -1,14 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
-import { billingEnabled, getStripe } from "@/lib/billing/stripe";
+import { billingEnabled, getStripe, priceIdForPlan } from "@/lib/billing/stripe";
 
 export const maxDuration = 30;
 
+const bodySchema = z.object({
+  // Sem plano no corpo, cai no PRO (compat com clientes antigos).
+  plan: z.enum(["BASIC", "PRO", "ULTIMATE"]).default("PRO"),
+});
+
+type PaidPlan = "BASIC" | "PRO" | "ULTIMATE";
+
 /**
- * Cria uma sessão de Checkout do Stripe (assinatura mensal do plano PRO).
- * Requer STRIPE_SECRET_KEY + STRIPE_PRICE_ID; sem isso responde 503 e a
- * UI esconde o botão de upgrade.
+ * Inicia o pagamento de um plano pago.
+ *
+ * - FREE  → cria uma sessão de Checkout do Stripe (assinatura mensal).
+ * - pago   → troca o preço da assinatura existente (upgrade/downgrade com
+ *            prorata) e já grava o plano; o webhook do Stripe reconcilia.
+ *
+ * Requer STRIPE_SECRET_KEY + STRIPE_PRICE_ID_<PLANO>; sem isso responde
+ * 503 e a UI esconde os planos.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -25,15 +38,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "billingDisabled" }, { status: 503 });
     }
 
+    const parsed = bodySchema.safeParse(await request.json().catch(() => ({})));
+    if (!parsed.success) {
+      return NextResponse.json({ error: "invalidPlan" }, { status: 400 });
+    }
+    const plan = parsed.data.plan as PaidPlan;
+    const priceId = priceIdForPlan(plan);
+    if (!priceId) {
+      // Plano existe no app, mas o preço não foi configurado no Stripe.
+      return NextResponse.json({ error: "planUnavailable" }, { status: 404 });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: session.id },
-      select: { id: true, email: true, name: true, plan: true, stripeCustomerId: true },
+      select: { id: true, email: true, name: true, plan: true, stripeCustomerId: true, stripeSubscriptionId: true },
     });
     if (!user) {
       return NextResponse.json({ error: "notFound" }, { status: 404 });
     }
-    if (user.plan === "PRO") {
-      return NextResponse.json({ error: "alreadyPro" }, { status: 409 });
+    if (user.plan === plan) {
+      return NextResponse.json({ error: "samePlan" }, { status: 409 });
+    }
+
+    // Já assinante: troca o preço da assinatura ativa (mesma assinatura,
+    // prorata calculado pelo Stripe) em vez de criar uma segunda cobrança.
+    if (user.plan !== "FREE") {
+      if (!user.stripeSubscriptionId) {
+        return NextResponse.json({ error: "alreadySubscribed" }, { status: 409 });
+      }
+      try {
+        const sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+        if (!["active", "trialing"].includes(sub.status)) {
+          return NextResponse.json({ error: "subscriptionInactive" }, { status: 409 });
+        }
+        const item = sub.items.data[0];
+        if (!item) {
+          return NextResponse.json({ error: "subscriptionEmpty" }, { status: 409 });
+        }
+        await stripe.subscriptions.update(sub.id, {
+          items: [{ id: item.id, price: priceId }],
+          proration_behavior: "create_prorations",
+          metadata: { userId: user.id, plan },
+        });
+        // Aplica já na UI; o webhook (quando ativo) reconcilia depois.
+        await prisma.user.update({ where: { id: user.id }, data: { plan } });
+        return NextResponse.json({ updated: true, plan });
+      } catch (error) {
+        console.error("[billing:checkout] troca de plano", error);
+        return NextResponse.json({ error: "subscriptionUpdateFailed" }, { status: 502 });
+      }
     }
 
     // Origem do callback: proxy reverso da Vercel entrega o host correto.
@@ -44,12 +97,12 @@ export async function POST(request: NextRequest) {
 
     const checkout = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: [{ price: process.env.STRIPE_PRICE_ID!.trim(), quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       customer: user.stripeCustomerId ?? undefined,
       customer_email: user.stripeCustomerId ? undefined : user.email,
       client_reference_id: user.id,
-      metadata: { userId: user.id },
-      subscription_data: { metadata: { userId: user.id } },
+      metadata: { userId: user.id, plan },
+      subscription_data: { metadata: { userId: user.id, plan } },
       allow_promotion_codes: true,
       success_url: `${origin}/dashboard?billing=success`,
       cancel_url: `${origin}/dashboard?billing=cancel`,

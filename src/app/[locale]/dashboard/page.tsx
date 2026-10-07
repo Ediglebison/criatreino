@@ -7,7 +7,8 @@ import { Link } from "@/i18n/navigation";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { getQuotaStatus } from "@/lib/billing/quota";
-import { billingEnabled } from "@/lib/billing/stripe";
+import { availablePlans, billingEnabled } from "@/lib/billing/stripe";
+import { monthlyLimit } from "@/lib/billing/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,10 @@ export default async function DashboardPage({
   // Cota mensal de gerações (só professores geram treinos)
   const quota = isProfessor ? await getQuotaStatus(session.id) : null;
   const checkoutOn = isProfessor && billingEnabled();
+  // Planos pagos com preço configurado (para a UI de assinatura)
+  const paidPlans = checkoutOn
+    ? availablePlans().map((plan) => ({ plan, limit: monthlyLimit(plan) }))
+    : [];
 
   // Retorno do Stripe Checkout (?billing=success|cancel)
   const billingNotice =
@@ -125,7 +130,7 @@ export default async function DashboardPage({
         {/* Plano e cota de gerações (professor) */}
         {quota && (
           <div className="mt-4">
-            <BillingCard quota={quota} checkoutEnabled={checkoutOn} />
+            <BillingCard quota={quota} checkoutEnabled={checkoutOn} plans={paidPlans} />
           </div>
         )}
 

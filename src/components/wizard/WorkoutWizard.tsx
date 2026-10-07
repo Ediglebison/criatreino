@@ -395,7 +395,7 @@ export function WorkoutWizard({
               </SummaryItem>
             </dl>
 
-            {quota && quota.plan === "FREE" && (
+            {quota && (
               <p
                 className={`mt-4 rounded-lg border px-3 py-2 text-sm ${
                   quota.remaining === 0
@@ -405,7 +405,11 @@ export function WorkoutWizard({
                 data-testid="quota-remaining"
               >
                 {quota.remaining === 0
-                  ? t("billing.quotaOut")
+                  ? t(
+                      quota.plan === "ULTIMATE"
+                        ? "billing.quotaOutMax"
+                        : "billing.quotaOut",
+                    )
                   : t("billing.quotaNotice", {
                       remaining: quota.remaining,
                       limit: quota.limit,

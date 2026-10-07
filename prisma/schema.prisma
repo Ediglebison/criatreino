@@ -63,7 +63,9 @@ enum Equipment {
 
 enum Plan {
   FREE
+  BASIC
   PRO
+  ULTIMATE
 }
 
 // Status de uma tentativa de geração de treino (conta para a cota mensal)

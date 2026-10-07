@@ -21,6 +21,26 @@ function expectedSource() {
   }
 }
 const EXPECTED_SOURCE = expectedSource();
+
+// Stripe configurado? (chave secreta + ao menos um preço de plano no .env)
+function stripeConfigured() {
+  try {
+    const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
+    const get = (name) =>
+      (env.match(new RegExp(`^${name}=(.*)$`, "m"))?.[1] ?? "")
+        .replace(/^["']|["']$/g, "")
+        .trim();
+    const hasKey = Boolean(get("STRIPE_SECRET_KEY"));
+    const prices = ["BASIC", "PRO", "ULTIMATE"].filter((p) =>
+      Boolean(get(`STRIPE_PRICE_ID_${p}`)),
+    );
+    return { enabled: hasKey && prices.length > 0, prices };
+  } catch {
+    return { enabled: false, prices: [] };
+  }
+}
+const STRIPE = stripeConfigured();
+
 const log = (s) => console.log(s);
 let failures = 0;
 const check = (name, cond, detail = "") => {
@@ -355,9 +375,15 @@ async function main() {
   const status0 = await req("/api/billing/status", { cookie: profCookie });
   check("billing/status 200", status0.status === 200, `status=${status0.status}`);
   check(
-    "status: plan FREE, checkout desativado sem Stripe",
-    status0.data?.plan === "FREE" && status0.data?.checkoutEnabled === false,
-    JSON.stringify(status0.data),
+    "status: plan FREE, checkout coerente com o .env",
+    status0.data?.plan === "FREE" && status0.data?.checkoutEnabled === STRIPE.enabled,
+    `esperado checkoutEnabled=${STRIPE.enabled} → ${JSON.stringify(status0.data)}`,
+  );
+  check(
+    "status: lista os planos com preço configurado",
+    Array.isArray(status0.data?.plans) &&
+      status0.data.plans.length === STRIPE.prices.length,
+    `plans=${JSON.stringify(status0.data?.plans)} esperado=${STRIPE.prices.length}`,
   );
   const quotaNow = status0.data?.quota;
   check(
@@ -365,6 +391,26 @@ async function main() {
     quotaNow?.used === 1,
     `used=${quotaNow?.used}`,
   );
+
+  // Contrato do checkout: sem Stripe → 503; com Stripe → plano inválido → 400
+  const badCheckout = await req("/api/billing/checkout", {
+    method: "POST",
+    cookie: profCookie,
+    body: { plan: "ENTERPRISE" },
+  });
+  if (STRIPE.enabled) {
+    check(
+      "checkout: plano inválido → 400",
+      badCheckout.status === 400,
+      `status=${badCheckout.status} body=${JSON.stringify(badCheckout.data)}`,
+    );
+  } else {
+    check(
+      "checkout sem Stripe → 503 billingDisabled",
+      badCheckout.status === 503 && badCheckout.data?.error === "billingDisabled",
+      `status=${badCheckout.status} body=${JSON.stringify(badCheckout.data)}`,
+    );
+  }
 
   try {
     await fillQuota("prof@criatreino.dev", 2); // 1 já usada + 2 = limite 3
