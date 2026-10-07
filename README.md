@@ -267,8 +267,15 @@ src/
   e processa `checkout.session.completed`, `customer.subscription.updated` e
   `customer.subscription.deleted` para sincronizar `User.plan` (plano vem do
   metadata do checkout/preço da assinatura).
-- Configuração local da CLI (opcional):
-  `stripe listen --forward-to localhost:3000/api/billing/webhook`.
+- Configuração local da CLI (opcional) — a partir da 1.5x o `--events` é
+  obrigatório; copie o `whsec_` que ele imprime para o `STRIPE_WEBHOOK_SECRET`:
+
+  ```bash
+  stripe login   # pareamento único (abre o browser)
+  stripe listen \
+    --events checkout.session.completed,customer.subscription.updated,customer.subscription.deleted \
+    --forward-to localhost:3000/api/billing/webhook
+  ```
 
 ## API (resumo)
 
