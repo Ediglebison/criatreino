@@ -19,6 +19,7 @@
     "test:billing": "node scripts/billing-smoke.mjs",
     "test:billing:checkout": "node scripts/billing-checkout-e2e.mjs",
     "stripe:setup": "node scripts/stripe-setup.mjs",
+    "stripe:webhook": "node scripts/stripe-webhook-setup.mjs",
     "check:i18n": "node scripts/check-i18n.mjs",
     "test": "tsc --noEmit && eslint . && node scripts/check-i18n.mjs"
   },
