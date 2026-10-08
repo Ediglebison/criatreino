@@ -6,6 +6,39 @@ import { safeNextPath } from "@/lib/safe-redirect";
 
 const handleI18n = createIntlMiddleware(routing);
 
+const isProd = process.env.NODE_ENV === "production";
+
+/**
+ * Content-Security-Policy com nonce por requisição (só em produção).
+ *
+ * O nonce é gerado aqui na borda e o Next o aplica nos próprios scripts
+ * (bootstrap/RSC); `strict-dynamic` libera os scripts que o Next injeta em
+ * runtime (chunks de rota). Em dev ficamos sem CSP para não quebrar o HMR
+ * (WebSocket de atualização fica fora de `connect-src 'self'`).
+ */
+function withCsp(res: Response): void {
+  if (!isProd) return;
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  const nonce = btoa(bin);
+  res.headers.set(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      `script-src 'nonce-${nonce}' 'strict-dynamic'`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join("; "),
+  );
+}
+
 // Rotas de app que exigem sessão (o prefixo de idioma é ignorado na checagem)
 const PROTECTED_PATHS = [
   "/dashboard",
@@ -48,7 +81,9 @@ export default async function proxy(req: NextRequest) {
   if (anonymousOnly && session) {
     const nextPath = req.nextUrl.searchParams.get("next");
     const target = safeNextPath(nextPath, `${prefix}/dashboard`);
-    return NextResponse.redirect(new URL(target, req.url));
+    const res = NextResponse.redirect(new URL(target, req.url));
+    withCsp(res);
+    return res;
   }
 
   // Sessão ausente em rota protegida → login preservando o destino
@@ -56,12 +91,16 @@ export default async function proxy(req: NextRequest) {
     const login = new URL(`${prefix}/login`, req.url);
     // "next" guarda o caminho SEM prefixo de idioma (a navegação i18n reinsere)
     login.searchParams.set("next", path);
-    return NextResponse.redirect(login);
+    const res = NextResponse.redirect(login);
+    withCsp(res);
+    return res;
   }
 
   // Redireciona/reescreve para o segmento de idioma, detecta idioma etc.
   // (Cabeçalhos de segurança saem do next.config.ts, que cobre /api também.)
-  return handleI18n(req);
+  const res = handleI18n(req);
+  withCsp(res);
+  return res;
 }
 
 export const config = {

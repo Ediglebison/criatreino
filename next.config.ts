@@ -25,6 +25,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Não divulga o framework nos cabeçalhos da resposta.
+  poweredByHeader: false,
   // Prisma client gerado fora de node_modules
   serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
   // Cabeçalhos em TODA resposta (páginas, /api e assets) — o proxy do

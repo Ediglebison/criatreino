@@ -15,10 +15,10 @@ export function effectiveOrigin(request: Request, url: URL): string {
   const proto =
     request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
     url.protocol.replace(":", "");
-  const host =
-    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-    request.headers.get("host") ||
-    url.host;
+  // Só o Host da própria conexão. X-Forwarded-Host é forjável pelo cliente
+  // e mudava a origem efetiva, anulando a checagem de Origin (bypass de CSRF)
+  // e abrindo password-reset poisoning quando NEXT_PUBLIC_APP_URL não está setada.
+  const host = request.headers.get("host") || url.host;
   return `${proto}://${host}`;
 }
 
@@ -28,6 +28,13 @@ export function isSameOrigin(request: Request, url: URL): boolean {
   const origin = request.headers.get("origin");
   if (origin && origin !== "null") {
     return safeOrigin(origin) === target;
+  }
+
+  if (origin === "null") {
+    // Origin "null" = iframe sandbox/data:/file:. Navegadores modernos sempre
+    // enviam Sec-Fetch-* junto → tratar como cross-origin e recusar. Clientes
+    // não-navegador (Node/curl, sem Sec-Fetch) seguem no fallback abaixo.
+    if (request.headers.get("sec-fetch-site")) return false;
   }
 
   // Sem Origin: último recurso é Referer (navegadores mandam em POST).

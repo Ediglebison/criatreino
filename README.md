@@ -235,13 +235,21 @@ src/
 - Toda rota de API **também** valida a sessão e as permissões (auto do professor/aluno,
   visibilidade do treino: dono, criador ou assignment) — não depende só do proxy.
 - Perfis e alunos só são acessíveis/geráveis pelo professor vinculado.
+- **CSP com nonce por requisição** nas páginas (produção): `script-src` com
+  nonce + `strict-dynamic`, `frame-ancestors 'none'`, `object-src 'none'`,
+  `base-uri`/`form-action 'self'` — aplicada no `proxy.ts`; em dev fica
+  desligada para não quebrar o HMR.
 - **Rate limiting** persistido no Postgres (`src/lib/rate-limit.ts`): login
-  20/min por IP e 5/15min por e-mail, cadastro 10/h por IP, geração 10/min por IP.
+  20/min por IP e 5/15min por e-mail, cadastro 10/h por IP, geração 10/min por
+  IP. O IP vem da **última** entrada do `X-Forwarded-For` (a anexada pelo
+  proxy de confiança — a primeira seria forjável).
 - **Cota de gerações** atômica no banco (`src/lib/billing/quota.ts`): reserva
   `INSERT...WHERE count < limit` (sem corrida), `402 quotaExceeded` com status
   para a UI, estorno em falha de geração.
 - **CSRF de login**: `Origin`/`Referer` precisam bater com a origem efetiva
-  (considerando proxy reverso) nas rotas de login/cadastro/**recuperação**.
+  (Host da conexão + `X-Forwarded-Proto`; `X-Forwarded-Host` é ignorado por
+  ser forjável) nas rotas de login/cadastro/**recuperação**. `Origin: "null"`
+  (iframe sandbox) é recusado quando o navegador envia `Sec-Fetch-*`.
 - **Role check**: geração e criação de treino exigem `PROFESSOR` (403 caso
   contrário).
 - Cabeçalhos de segurança em todas as respostas via `next.config.ts`

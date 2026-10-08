@@ -90,7 +90,14 @@ export async function pruneExpired(): Promise<void> {
 /** IP do cliente considerando proxies (Vercel/Cloudflare). */
 export function clientIp(request: Request): string {
   const fwd = request.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0]!.trim().slice(0, 64);
+  if (fwd) {
+    // Entrada da DIREITA: cada proxy da cadeia anexa o IP que viu, então o
+    // último é o do salto mais próximo (o único que o proxy de confiança
+    // controla). A primeira entrada é forjável pelo cliente e permitia
+    // contornar o limite por IP.
+    const parts = fwd.split(",");
+    return parts[parts.length - 1]!.trim().slice(0, 64);
+  }
   return request.headers.get("x-real-ip")?.slice(0, 64) || "unknown";
 }
 

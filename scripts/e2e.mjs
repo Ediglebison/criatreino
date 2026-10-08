@@ -471,6 +471,21 @@ async function main() {
     apiProbe.headers.get("x-content-type-options") === "nosniff",
     `nosniff=${apiProbe.headers.get("x-content-type-options")}`,
   );
+  check(
+    "X-Powered-By ausente",
+    !page.headers.get("x-powered-by"),
+    `x-powered-by=${page.headers.get("x-powered-by")}`,
+  );
+  // CSP com nonce existe só em produção (mesmo gate do HSTS; em dev o HMR
+  // precisa ficar fora do connect-src).
+  if (page.headers.get("strict-transport-security")) {
+    const csp = page.headers.get("content-security-policy") ?? "";
+    check(
+      "CSP com nonce + frame-ancestors (produção)",
+      csp.includes("script-src") && csp.includes("nonce-") && csp.includes("frame-ancestors 'none'"),
+      `csp=${csp.slice(0, 140)}`,
+    );
+  }
   // Origin cross-site no login → 403 (CSRF de login)
   const csrf = await fetch(BASE + "/api/auth/login", {
     method: "POST",
