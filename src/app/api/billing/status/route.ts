@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { getQuotaStatus } from "@/lib/billing/quota";
+import { getMonthlyLimits } from "@/lib/billing/settings";
 import { availablePlans, billingEnabled } from "@/lib/billing/stripe";
-import { monthlyLimit, PAID_PLANS } from "@/lib/billing/limits";
+import { PAID_PLANS } from "@/lib/billing/limits";
 
 /** Status do plano + cota do mês corrente para a sessão atual. */
 export async function GET() {
@@ -17,6 +18,7 @@ export async function GET() {
     // Planos pagos com preço configurado no Stripe (+ limite de cada um),
     // na ordem do mais barato ao mais caro — é o que a UI oferece.
     const configured = new Set(availablePlans());
+    const limits = await getMonthlyLimits();
 
     return NextResponse.json({
       plan: quota.plan,
@@ -24,7 +26,7 @@ export async function GET() {
       checkoutEnabled: billingEnabled(),
       plans: PAID_PLANS.filter((p) => configured.has(p)).map((plan) => ({
         plan,
-        limit: monthlyLimit(plan),
+        limit: limits[plan],
       })),
     });
   } catch (error) {

@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { PageHeader } from "@/components/ui";
 import { StudentManager } from "@/components/StudentManager";
 import { getSession } from "@/lib/auth/session";
+import { canTeach } from "@/lib/roles";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function StudentsPage() {
   const session = await getSession();
   if (!session) redirect("/login");
-  if (session.role !== "PROFESSOR") redirect("/dashboard");
+  if (!canTeach(session.role)) redirect("/dashboard");
 
   const t = await getTranslations();
 

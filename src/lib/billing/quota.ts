@@ -1,11 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db";
-import {
-  currentPeriodStart,
-  monthlyLimit,
-  periodEnd,
-  type Plan,
-} from "./limits";
+import { currentPeriodStart, periodEnd, type Plan } from "./limits";
+import { getMonthlyLimit } from "./settings";
 
 /**
  * Controle de cota mensal de gerações.
@@ -21,7 +17,7 @@ import {
  * meio) e fica de fora da contagem, para a cota não travar para sempre.
  */
 
-const PENDING_TTL_MS = 10 * 60 * 1000;
+export const PENDING_TTL_MS = 10 * 60 * 1000;
 
 export type QuotaStatus = {
   plan: Plan;
@@ -40,7 +36,7 @@ async function getPlan(userId: string): Promise<Plan> {
   return user?.plan ?? "FREE";
 }
 
-function pendingCutoff(): Date {
+export function pendingCutoff(): Date {
   return new Date(Date.now() - PENDING_TTL_MS);
 }
 
@@ -66,7 +62,7 @@ async function buildStatus(
   periodStart: Date,
   used?: number,
 ): Promise<QuotaStatus> {
-  const limit = monthlyLimit(plan);
+  const limit = await getMonthlyLimit(plan);
   const consumed = used ?? (await countConsumed(userId, periodStart));
   return {
     plan,
@@ -96,7 +92,7 @@ export type Reservation =
 export async function reserveQuota(userId: string): Promise<Reservation> {
   const plan = await getPlan(userId);
   const periodStart = currentPeriodStart();
-  const limit = monthlyLimit(plan);
+  const limit = await getMonthlyLimit(plan);
   const recordId = randomUUID();
   const cutoff = pendingCutoff();
   // Timestamp vem do JS (UTC), não de NOW(): o fuso do servidor (ex.:

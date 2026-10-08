@@ -477,6 +477,38 @@ async function main() {
   const anonPage = await fetch(BASE + "/dashboard", { redirect: "manual" });
   check("anônimo /dashboard → redirect login", [302, 307, 303].includes(anonPage.status), `status=${anonPage.status}`);
 
+  // 10b. Painel admin: exige sessão + role ADMIN (professor não passa)
+  log("\n[10b] Proteção do painel admin");
+  const adminAnonPut = await req("/api/admin/settings/limits", {
+    method: "PUT",
+    body: { FREE: 3 },
+  });
+  check("admin API anônimo → 401", adminAnonPut.status === 401, `status=${adminAnonPut.status}`);
+  const adminProfPut = await req("/api/admin/settings/limits", {
+    method: "PUT",
+    body: { FREE: 3 },
+    cookie: profCookie,
+  });
+  check("admin API professor → 403", adminProfPut.status === 403, `status=${adminProfPut.status}`);
+  const adminProfPatch = await req("/api/admin/users/qualquer-id", {
+    method: "PATCH",
+    body: { name: "X" },
+    cookie: profCookie,
+  });
+  check("admin users PATCH professor → 403", adminProfPatch.status === 403, `status=${adminProfPatch.status}`);
+  const adminAnonPage = await fetch(BASE + "/admin", { redirect: "manual" });
+  check("/admin anônimo → redirect login", [302, 307, 303].includes(adminAnonPage.status), `status=${adminAnonPage.status}`);
+  const adminProfPage = await fetch(BASE + "/admin", {
+    redirect: "manual",
+    headers: { cookie: profCookie },
+  });
+  check(
+    "/admin professor → redirect dashboard",
+    [302, 307, 303].includes(adminProfPage.status) &&
+      (adminProfPage.headers.get("location") ?? "").includes("dashboard"),
+    `status=${adminProfPage.status} location=${adminProfPage.headers.get("location")}`,
+  );
+
   // 11. i18n
   log("\n[11] i18n");
   const pt = await fetch(BASE + "/");

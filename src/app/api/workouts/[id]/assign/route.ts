@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
+import { canTeach } from "@/lib/roles";
 import { prisma } from "@/lib/db";
 
 type Params = { params: Promise<{ id: string }> };
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (!session) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
-    if (session.role !== "PROFESSOR") {
+    if (!canTeach(session.role)) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 

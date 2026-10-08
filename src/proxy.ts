@@ -7,7 +7,13 @@ import { safeNextPath } from "@/lib/safe-redirect";
 const handleI18n = createIntlMiddleware(routing);
 
 // Rotas de app que exigem sessão (o prefixo de idioma é ignorado na checagem)
-const PROTECTED_PATHS = ["/dashboard", "/workouts", "/students", "/profile"];
+const PROTECTED_PATHS = [
+  "/dashboard",
+  "/workouts",
+  "/students",
+  "/profile",
+  "/admin",
+];
 // Rotas de login/cadastro que redirecionam se já houver sessão
 const ANONYMOUS_ONLY_PATHS = ["/login", "/register"];
 

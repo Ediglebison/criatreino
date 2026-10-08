@@ -8,7 +8,8 @@ import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { getQuotaStatus } from "@/lib/billing/quota";
 import { availablePlans, billingEnabled } from "@/lib/billing/stripe";
-import { monthlyLimit } from "@/lib/billing/limits";
+import { getMonthlyLimits } from "@/lib/billing/settings";
+import { canTeach } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function DashboardPage({
   const { locale } = await params;
   const { billing } = await searchParams;
   const t = await getTranslations();
-  const isProfessor = session.role === "PROFESSOR";
+  const isProfessor = canTeach(session.role);
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
@@ -78,9 +79,11 @@ export default async function DashboardPage({
   const quota = isProfessor ? await getQuotaStatus(session.id) : null;
   const checkoutOn = isProfessor && billingEnabled();
   // Planos pagos com preço configurado (para a UI de assinatura)
-  const paidPlans = checkoutOn
-    ? availablePlans().map((plan) => ({ plan, limit: monthlyLimit(plan) }))
-    : [];
+  const planLimits = checkoutOn ? await getMonthlyLimits() : null;
+  const paidPlans =
+    planLimits !== null
+      ? availablePlans().map((plan) => ({ plan, limit: planLimits[plan] }))
+      : [];
 
   // Retorno do Stripe Checkout (?billing=success|cancel)
   const billingNotice =

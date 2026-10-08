@@ -17,8 +17,10 @@ import {
   athleteProfileSchema,
   type CatalogExercise,
   type Equipment,
+  type Role,
 } from "@/lib/types";
 import type { QuotaInfo } from "@/components/BillingCard";
+import { canTeach } from "@/lib/roles";
 import {
   EMPTY_PROFILE,
   ProfileForm,
@@ -33,7 +35,7 @@ type Step = "athlete" | "profile" | "generate" | "review";
 type ApiProfile = Parameters<typeof apiToForm>[0];
 
 export type WizardProps = {
-  me: { id: string; name: string; role: "PROFESSOR" | "ALUNO" };
+  me: { id: string; name: string; role: Role };
   students: Array<{ id: string; name: string; email: string }>;
   initialProfile: ApiProfile | null;
   preselectedStudent: { id: string; name: string } | null;
@@ -50,7 +52,7 @@ export function WorkoutWizard({
   const t = useTranslations();
   const router = useRouter();
 
-  const isProfessor = me.role === "PROFESSOR";
+  const isProfessor = canTeach(me.role);
 
   const [step, setStep] = useState<Step>(
     !isProfessor

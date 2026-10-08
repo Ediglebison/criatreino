@@ -277,6 +277,42 @@ src/
     --forward-to localhost:3000/api/billing/webhook
   ```
 
+## Painel administrativo (`/admin`)
+
+- Exclusivo da role `ADMIN` (enum `Role`; a proteção fica no layout
+  `/admin/layout.tsx` + guard `requireAdmin()` em toda rota `/api/admin/*`).
+  O `proxy.ts` exige sessão para `/admin`; quem não é ADMIN cai no `/dashboard`.
+- Conta admin: `ediglebison@gmail.com` (promovida no banco:
+  `UPDATE "User" SET role='ADMIN' WHERE email='ediglebison@gmail.com';`).
+  Admin **mantém** as capacidades de professor (helper `canTeach()` em
+  `src/lib/roles.ts`) — promoção de conta existente não quebra o uso atual.
+  Como o JWT carrega a role, a promoção só aparece no navegador após novo login.
+- Telas:
+  - **Visão geral** (`/admin`): contagens (professores, alunos, treinos,
+    atribuições, exercícios, gerações do mês, novos em 30 dias), receita MRR
+    (valores lidos do Stripe quando configurado, senão referência em
+    `src/lib/billing/prices.ts`) e cadastros recentes.
+  - **Usuários** (`/admin/users`): busca/filtro por função e plano, uso da cota
+    do mês, vínculos e edição (nome, email, função, plano, senha). Rebaixar a
+    `ALUNO` desvincula os alunos do professor; `ADMIN`/`PROFESSOR` não pode ser
+    aluno de ninguém. Não há exclusão de usuários. Alteração de plano é override
+    manual no banco — a assinatura Stripe não é mexida aqui.
+  - **Assinaturas** (`/admin/subscriptions`): status ao vivo do Stripe (status,
+    valor, renovação, agendamento de cancelamento), link direto para o cliente
+    no dashboard do Stripe e ações **Agendar cancelamento** / **Reativar**
+    (`cancel_at_period_end`; o webhook devolve a FREE no fim do período).
+  - **Exercícios** (`/admin/exercises`): CRUD do catálogo (slug kebab-case,
+    nomes PT/EN, grupo, equipamento, músculos secundários, avisos). Exclusão é
+    bloqueada com `409 inUse` enquanto o exercício estiver em algum treino.
+  - **Configurações** (`/admin/settings`): limites de cota editáveis — gravados
+    na tabela `AdminSetting` com fallback para o `.env`
+    (`BILLING_*_MONTHLY_LIMIT`), cache de 15s invalidado na gravação, então o
+    novo limite vale imediatamente para novas gerações. Mostra também o estado
+    do billing (Stripe/webhook/preços).
+- Como testar sem browser: crie uma conta ADMIN temporária (ou promova o
+  `prof@criatreino.dev`), rode `npm run test:e2e` (a seção `[10b]` garante que
+  anônimo leva `401` e professor leva `403` nas rotas admin) e reverta.
+
 ## API (resumo)
 
 | Método | Rota | Descrição |
@@ -295,6 +331,11 @@ src/
 | GET | `/api/billing/status` | Plano, cota usada/restante e reset |
 | POST | `/api/billing/checkout` | Cria sessão de checkout Stripe |
 | POST | `/api/billing/webhook` | Webhook Stripe (assinatura verificada) |
+| PATCH | `/api/admin/users/[id]` | Edita cadastro — ADMIN |
+| PUT | `/api/admin/settings/limits` | Limites de cota (número ou `null` = `.env`) — ADMIN |
+| POST | `/api/admin/exercises` | Cria exercício do catálogo — ADMIN |
+| PATCH/DELETE | `/api/admin/exercises/[id]` | Edita/exclui exercício — ADMIN |
+| POST | `/api/admin/subscriptions/cancel` | Cancela (`cancel`)/reativa (`reactivate`) assinatura — ADMIN |
 | GET | `/api/health` | Health check (200 ok / 503 banco fora) |
 
 ## Produção (Vercel + Postgres gerenciado)

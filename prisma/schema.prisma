@@ -13,6 +13,7 @@ datasource db {
 enum Role {
   PROFESSOR
   ALUNO
+  ADMIN
 }
 
 enum Sex {
@@ -292,4 +293,12 @@ model Assignment {
 
   @@unique([workoutId, studentId])
   @@index([studentId])
+}
+
+// Configurações editáveis pelo painel administrativo (fallback: .env).
+// Valor é string para o painel guardar qualquer tipo; parse é por chamador.
+model AdminSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

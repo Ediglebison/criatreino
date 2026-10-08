@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { getSession } from "@/lib/auth/session";
+import { canTeach } from "@/lib/roles";
 import { LangSwitcher } from "./LangSwitcher";
 import { Logo } from "./Logo";
 import { LogoutButton } from "./LogoutButton";
@@ -18,8 +19,11 @@ export async function AppHeader({ variant = "marketing" }: { variant?: "marketin
     <nav className="hidden items-center gap-1 text-sm md:flex">
       <NavLink href="/dashboard">{t("nav.dashboard")}</NavLink>
       <NavLink href="/workouts/new">{t("nav.newWorkout")}</NavLink>
-      {session.role === "PROFESSOR" && (
+      {canTeach(session.role) && (
         <NavLink href="/students">{t("nav.students")}</NavLink>
+      )}
+      {session.role === "ADMIN" && (
+        <NavLink href="/admin">{t("nav.admin")}</NavLink>
       )}
     </nav>
   ) : null;
@@ -75,8 +79,11 @@ export async function AppHeader({ variant = "marketing" }: { variant?: "marketin
           <nav className="mx-auto flex w-full max-w-6xl gap-1 overflow-x-auto px-4 py-1.5">
             <NavLink href="/dashboard">{t("nav.dashboard")}</NavLink>
             <NavLink href="/workouts/new">{t("nav.newWorkout")}</NavLink>
-            {session!.role === "PROFESSOR" && (
+            {canTeach(session!.role) && (
               <NavLink href="/students">{t("nav.students")}</NavLink>
+            )}
+            {session!.role === "ADMIN" && (
+              <NavLink href="/admin">{t("nav.admin")}</NavLink>
             )}
           </nav>
         </div>

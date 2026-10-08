@@ -7,6 +7,7 @@ import {
   type WizardProps,
 } from "@/components/wizard/WorkoutWizard";
 import { getSession } from "@/lib/auth/session";
+import { canTeach } from "@/lib/roles";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export default async function NewWorkoutPage({ params, searchParams }: PageProps
   const { locale } = await params;
   const { student } = await searchParams;
 
-  const isProfessor = session.role === "PROFESSOR";
+  const isProfessor = canTeach(session.role);
 
   const [students, meProfile, preselected] = await Promise.all([
     isProfessor

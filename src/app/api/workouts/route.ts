@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { draftDaySchema, draftExerciseSchema } from "@/lib/types";
+import { canTeach } from "@/lib/roles";
 import { getCatalogBySlugs } from "@/lib/workout/catalog";
 
 const createSchema = z.object({
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar treino é função do professor (aluno só recebe/visualiza).
-    if (session.role !== "PROFESSOR") {
+    if (!canTeach(session.role)) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 

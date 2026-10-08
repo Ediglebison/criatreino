@@ -41,8 +41,13 @@ export async function verifySession(
       email: String(payload.email ?? ""),
       name: String(payload.name ?? ""),
       // Fail-closed: role desconhecida/malformada vira ALUNO (menor
-      // privilégio), nunca PROFESSOR.
-      role: payload.role === "PROFESSOR" ? "PROFESSOR" : "ALUNO",
+      // privilégio). Só PROFESSOR e ADMIN são reconhecidos explicitamente.
+      role:
+        payload.role === "PROFESSOR"
+          ? "PROFESSOR"
+          : payload.role === "ADMIN"
+            ? "ADMIN"
+            : "ALUNO",
       locale: String(payload.locale ?? "pt-BR"),
       professorId: (payload.professorId as string | null) ?? null,
     };

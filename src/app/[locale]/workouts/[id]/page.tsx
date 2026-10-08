@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { AssignDialog } from "@/components/AssignDialog";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { getSession } from "@/lib/auth/session";
+import { canTeach } from "@/lib/roles";
 import { prisma } from "@/lib/db";
 import { exerciseName, exerciseWarning } from "@/lib/types";
 
@@ -88,7 +89,7 @@ export default async function WorkoutPage({ params }: PageProps) {
   );
 
   const canAssign =
-    isCreator && session.role === "PROFESSOR" && workout.status === "FINAL";
+    isCreator && canTeach(session.role) && workout.status === "FINAL";
 
   return (
     <>

@@ -63,7 +63,7 @@ export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
 export type MuscleGroup = (typeof MUSCLE_GROUPS)[number];
 export type Equipment = (typeof EQUIPMENT)[number];
 export type LimitationCode = (typeof LIMITATIONS)[number];
-export type Role = "PROFESSOR" | "ALUNO";
+export type Role = "PROFESSOR" | "ALUNO" | "ADMIN";
 
 // ---------------------------------------------------------------------------
 // Perfil do atleta (payload do formulário de avaliação)

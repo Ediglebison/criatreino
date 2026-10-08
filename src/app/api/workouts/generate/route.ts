@@ -8,6 +8,7 @@ import { GenerationError } from "@/lib/workout/error";
 import { getCatalogForProfile } from "@/lib/workout/catalog";
 import { reserveQuota, settleQuota } from "@/lib/billing/quota";
 import { clientIp, consume, tooManyRequests } from "@/lib/rate-limit";
+import { canTeach } from "@/lib/roles";
 
 export const maxDuration = 60;
 
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Geração é função do professor (aluno não prescreve treino).
-    if (session.role !== "PROFESSOR") {
+    if (!canTeach(session.role)) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
