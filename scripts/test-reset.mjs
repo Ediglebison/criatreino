@@ -1,6 +1,7 @@
 // Zera o estado volátil das suítes de teste no Postgres:
 //   - RateLimit    (senhas erradas/rajadas de requisições das execuções anteriores)
 //   - UsageRecord  (cota mensal de 3 gerações do professor demo)
+//   - PasswordReset (tokens de redefinição de senha deixados por execuções)
 // Sem isso, 1ª execução passa e a seguinte cai em 402/429.
 //
 //   node scripts/test-reset.mjs          (usado por test:e2e e pelo globalSetup do Playwright)
@@ -24,7 +25,12 @@ export async function resetTestState(connectionString = process.env.DATABASE_URL
   try {
     const rate = await client.query('DELETE FROM "RateLimit"');
     const usage = await client.query('DELETE FROM "UsageRecord"');
-    return { rateLimit: rate.rowCount, usageRecord: usage.rowCount };
+    const resets = await client.query('DELETE FROM "PasswordReset"');
+    return {
+      rateLimit: rate.rowCount,
+      usageRecord: usage.rowCount,
+      passwordReset: resets.rowCount,
+    };
   } finally {
     await client.end();
   }

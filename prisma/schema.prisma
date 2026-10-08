@@ -95,6 +95,10 @@ model User {
   role         Role
   locale       String   @default("pt-BR")
 
+  // Versão das sessões: incrementa quando a senha muda (reset/admin) e
+  // invalida os cookies JWT emitidos com a versão antiga.
+  sessionVersion Int @default(0)
+
   // Cobrança (Stripe)
   plan                 Plan    @default(FREE)
   stripeCustomerId     String? @unique
@@ -111,6 +115,7 @@ model User {
   assignments       Assignment[] @relation("StudentAssignments")
   assignmentsMade   Assignment[] @relation("Assigner")
   usageRecords      UsageRecord[] @relation("UsageRecords")
+  passwordResets    PasswordReset[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -301,4 +306,18 @@ model AdminSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+// Tokens de redefinição de senha: guarda só o hash SHA-256 do token
+// (o link com o token em claro vai por e-mail, nunca pelo banco).
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }

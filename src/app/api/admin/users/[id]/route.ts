@@ -81,6 +81,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         if (data.plan !== undefined) update.plan = data.plan;
         if (data.password !== undefined) {
           update.passwordHash = await hashPassword(data.password);
+          // Troca de senha via painel também derruba as sessões do usuário.
+          update.sessionVersion = { increment: 1 };
         }
 
         // Mudança de role: ajusta vínculos de professor/aluno.

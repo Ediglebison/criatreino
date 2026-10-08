@@ -103,7 +103,9 @@
       "submit": "Sign in",
       "submitting": "Signing in...",
       "noAccount": "Don't have an account?",
-      "createOne": "Create one now"
+      "createOne": "Create one now",
+      "forgotLink": "Forgot your password?",
+      "resetSuccess": "Password reset successfully. Sign in with your new password."
     },
     "register": {
       "title": "Create account",
@@ -129,6 +131,25 @@
       "emailTaken": "An account with this email already exists.",
       "weakPassword": "The password must be at least 8 characters.",
       "invalidData": "Please check the information provided."
+    },
+    "forgot": {
+      "title": "Recover access",
+      "subtitle": "Enter your email and we'll send you a link to reset your password.",
+      "submit": "Send recovery link",
+      "submitting": "Sending…",
+      "success": "If an account exists with this email, you'll receive a message with the reset link. Also check your spam folder.",
+      "backToLogin": "Back to login"
+    },
+    "reset": {
+      "title": "Reset password",
+      "subtitle": "Choose a new password for your account.",
+      "password": "New password",
+      "confirm": "Confirm new password",
+      "mismatch": "The passwords don't match.",
+      "submit": "Reset password",
+      "submitting": "Resetting…",
+      "invalidToken": "Invalid or expired link.",
+      "invalidTokenHint": "Request a new link on the password recovery page."
     }
   },
   "roles": {

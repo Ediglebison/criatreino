@@ -2,11 +2,27 @@
 //   npm run test:e2e            → http://localhost:3000
 //   BASE=http://IP:3000 npm run test:e2e
 // Cobre: login → alunos → geração → revisão (remover/substituir) → salvar →
-// atribuição → PDF → permissões → páginas SSR → i18n.
+// atribuição → PDF → permissões → páginas SSR → i18n → recuperação de senha.
+import { createHash, randomBytes } from "node:crypto";
+import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { resetTestState, fillQuota } from "./test-reset.mjs";
 
+const require = createRequire(import.meta.url);
+
 const BASE = process.env.BASE || "http://localhost:3000";
+
+/** Lê uma variável do .env (mesmo padrão dos demais helpers do arquivo). */
+function envFile(name) {
+  try {
+    const file = readFileSync(new URL("../.env", import.meta.url), "utf8");
+    return (file.match(new RegExp(`^${name}=(.*)$`, "m"))?.[1] ?? "")
+      .replace(/^["']|["']$/g, "")
+      .trim();
+  } catch {
+    return "";
+  }
+}
 
 // Fonte esperada da geração depende do .env: chave → OpenAI, sem chave → simulado
 function expectedSource() {
@@ -524,6 +540,116 @@ async function main() {
   const nfEn = await fetch(BASE + "/en-US/does-not-exist");
   const nfEnText = await nfEn.text();
   check("404 localizado (en-US)", nfEn.status === 404 && nfEnText.includes("Page not found"), `status=${nfEn.status}`);
+
+  // 12. Recuperação de senha (forgot → token → reset → login → sessões caem)
+  log("\n[12] Recuperação de senha");
+  {
+    const { Client } = require("pg");
+    const bcrypt = require("bcryptjs");
+
+    // a) E-mail inexistente: resposta genérica (não dá para enumerar contas)
+    const ghost = await req("/api/auth/forgot", {
+      method: "POST",
+      body: { email: "nao-existe-xyz@criatreino.dev" },
+    });
+    check(
+      "forgot inexistente → 200 genérico",
+      ghost.status === 200 && ghost.data?.ok === true,
+      `status=${ghost.status}`,
+    );
+
+    // b) E-mail real: 200 idêntico e um token (só hash) passa a existir
+    const forgot = await req("/api/auth/forgot", {
+      method: "POST",
+      body: { email: "prof@criatreino.dev" },
+    });
+    check(
+      "forgot existente → 200",
+      forgot.status === 200 && forgot.data?.ok === true,
+      `status=${forgot.status}`,
+    );
+
+    const db = new Client({
+      connectionString: process.env.DATABASE_URL || envFile("DATABASE_URL"),
+    });
+    await db.connect();
+    try {
+      const user = await db.query(
+        'SELECT id FROM "User" WHERE email = $1',
+        ["prof@criatreino.dev"],
+      );
+      const profId = user.rows[0]?.id ?? "";
+      const rows = profId
+        ? await db.query(
+            'SELECT count(*)::int AS n FROM "PasswordReset" WHERE "userId" = $1',
+            [profId],
+          )
+        : { rows: [{ n: 0 }] };
+      check("token de reset criado no banco", rows.rows[0].n === 1, `n=${rows.rows[0].n}`);
+
+      // c) O e-mail "chega" ao teste: token conhecido + hash gravado direto
+      const token = randomBytes(32).toString("base64url");
+      const tokenHash = createHash("sha256").update(token).digest("hex");
+      const expiresAt = `${new Date(Date.now() + 30 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ")}`;
+      await db.query(
+        'INSERT INTO "PasswordReset" (id, "userId", "tokenHash", "expiresAt") VALUES ($1, $2, $3, $4)',
+        [randomBytes(12).toString("hex"), profId, tokenHash, expiresAt],
+      );
+
+      // d) Página de redefinição renderiza com o token
+      const resetPage = await fetch(`${BASE}/reset-password?token=${token}`);
+      check("GET /reset-password?token → 200", resetPage.status === 200, `status=${resetPage.status}`);
+
+      // e) Troca de senha
+      const reset = await req("/api/auth/reset", {
+        method: "POST",
+        body: { token, password: "novasenha1234" },
+      });
+      check("reset → 200", reset.status === 200 && reset.data?.ok === true, `status=${reset.status}`);
+
+      // f) Token de uso único (replay recusado)
+      const replay = await req("/api/auth/reset", {
+        method: "POST",
+        body: { token, password: "outrasenha1234" },
+      });
+      check(
+        "token reutilizado → 400",
+        replay.status === 400 && replay.data?.error === "invalidToken",
+        `status=${replay.status}`,
+      );
+
+      // g) Login com a nova senha; senha antiga morreu
+      const newPass = await req("/api/auth/login", {
+        method: "POST",
+        body: { email: "prof@criatreino.dev", password: "novasenha1234" },
+      });
+      check("login senha nova → 200", newPass.status === 200, `status=${newPass.status}`);
+      const oldPass = await req("/api/auth/login", {
+        method: "POST",
+        body: { email: "prof@criatreino.dev", password: "demo12345" },
+      });
+      check("login senha antiga → 401", oldPass.status === 401, `status=${oldPass.status}`);
+
+      // h) Cookie antigo (seção 1) derrubado pelo bump de sessionVersion
+      const stale = await req("/api/students", { cookie: profCookie });
+      check("sessão antiga → 401", stale.status === 401, `status=${stale.status}`);
+
+      // i) Restaura a senha original para as próximas execuções
+      await db.query('UPDATE "User" SET "passwordHash" = $1 WHERE email = $2', [
+        bcrypt.hashSync("demo12345", 10),
+        "prof@criatreino.dev",
+      ]);
+      await db.query('DELETE FROM "PasswordReset"');
+    } finally {
+      await db.end();
+    }
+
+    const restored = await req("/api/auth/login", {
+      method: "POST",
+      body: { email: "prof@criatreino.dev", password: "demo12345" },
+    });
+    check("senha original restaurada → 200", restored.status === 200, `status=${restored.status}`);
+  }
 
   log(failures === 0 ? "\n✅ E2E OK" : `\n❌ ${failures} falha(s)`);
   process.exit(failures === 0 ? 0 : 1);

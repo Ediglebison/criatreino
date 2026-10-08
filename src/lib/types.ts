@@ -163,6 +163,8 @@ export type SessionUser = {
   role: Role;
   locale: string;
   professorId: string | null;
+  /** Versão das sessões no JWT (bump derruba cookies antigos). */
+  sessionVersion?: number;
 };
 
 // ---------------------------------------------------------------------------

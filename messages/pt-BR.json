@@ -103,7 +103,9 @@
       "submit": "Entrar",
       "submitting": "Entrando...",
       "noAccount": "Ainda não tem conta?",
-      "createOne": "Crie uma agora"
+      "createOne": "Crie uma agora",
+      "forgotLink": "Esqueceu a senha?",
+      "resetSuccess": "Senha redefinida com sucesso. Entre com a nova senha."
     },
     "register": {
       "title": "Criar conta",
@@ -129,6 +131,25 @@
       "emailTaken": "Já existe uma conta com este e-mail.",
       "weakPassword": "A senha precisa ter pelo menos 8 caracteres.",
       "invalidData": "Verifique os dados informados."
+    },
+    "forgot": {
+      "title": "Recuperar acesso",
+      "subtitle": "Informe seu email e enviaremos um link para redefinir sua senha.",
+      "submit": "Enviar link de recuperação",
+      "submitting": "Enviando…",
+      "success": "Se existir uma conta com este email, você receberá uma mensagem com o link de redefinição. Confira também a caixa de spam.",
+      "backToLogin": "Voltar ao login"
+    },
+    "reset": {
+      "title": "Redefinir senha",
+      "subtitle": "Escolha uma nova senha para a sua conta.",
+      "password": "Nova senha",
+      "confirm": "Confirmar nova senha",
+      "mismatch": "As senhas não coincidem.",
+      "submit": "Redefinir senha",
+      "submitting": "Redefinindo…",
+      "invalidToken": "Link inválido ou expirado.",
+      "invalidTokenHint": "Peça um novo link na página de recuperação de senha."
     }
   },
   "roles": {

@@ -77,6 +77,8 @@ npm run dev             # http://localhost:3000
 | `BILLING_PRO_MONTHLY_LIMIT` | Gerações/mês do plano Pro (padrão `100`) |
 | `BILLING_ULTIMATE_MONTHLY_LIMIT` | Gerações/mês do plano Ultimate (padrão `500`) |
 | `PG_POOL_MAX` | Conexões por instância do pool (padrão `5`) |
+| `RESEND_API_KEY` | Chave do Resend (e-mails de recuperação de senha). **Vazia** = link impresso no log do servidor (dev/local) |
+| `EMAIL_FROM` | Remetente dos e-mails (padrão `CrIA Treino <onboarding@resend.dev>`) |
 
 Variáveis obrigatórias são validadas no boot (`src/lib/env.ts`): em produção um
 deploy sem `AUTH_SECRET`/`DATABASE_URL` falha no log de inicialização em vez de
@@ -223,6 +225,12 @@ src/
 ## Segurança
 
 - Senhas com bcrypt; sessão em JWT httpOnly (7 dias) assinado com `AUTH_SECRET`.
+- **Recuperação de senha**: token de 256 bits com validade de 30 min, guardado
+  **só como hash SHA-256** no banco e de uso único (consumo condicional atômico).
+  Resposta `200` sempre igual, exista a conta ou não (anti-enumeração).
+- **Troca de senha derruba as sessões**: `User.sessionVersion` incrementa no
+  reset (e na troca pelo painel admin) e o `getSession()` compara com a versão
+  embutida no JWT — cookies antigos passam a valer `null` (fail-closed).
 - `src/proxy.ts` redireciona rotas protegidas (`/dashboard`, `/workouts`, `/students`).
 - Toda rota de API **também** valida a sessão e as permissões (auto do professor/aluno,
   visibilidade do treino: dono, criador ou assignment) — não depende só do proxy.
@@ -233,7 +241,7 @@ src/
   `INSERT...WHERE count < limit` (sem corrida), `402 quotaExceeded` com status
   para a UI, estorno em falha de geração.
 - **CSRF de login**: `Origin`/`Referer` precisam bater com a origem efetiva
-  (considerando proxy reverso) nas rotas de login/cadastro.
+  (considerando proxy reverso) nas rotas de login/cadastro/**recuperação**.
 - **Role check**: geração e criação de treino exigem `PROFESSOR` (403 caso
   contrário).
 - Cabeçalhos de segurança em todas as respostas via `next.config.ts`
@@ -313,6 +321,23 @@ src/
   `prof@criatreino.dev`), rode `npm run test:e2e` (a seção `[10b]` garante que
   anônimo leva `401` e professor leva `403` nas rotas admin) e reverta.
 
+## Recuperação de senha
+
+1. No login, **“Esqueceu a senha?”** → `/forgot-password` (email);
+2. `POST /api/auth/forgot` cria o token (30 min, hash SHA-256) e envia o link
+   `${APP}/[locale]/reset-password?token=...` por e-mail — resposta sempre
+   `200 { ok: true }`, mesmo para email inexistente;
+3. `/reset-password` troca a senha via `POST /api/auth/reset` (uso único);
+4. sucesso incrementa `sessionVersion` → **todas as sessões abertas caem** e o
+   login é redirecionado com o aviso “senha redefinida”.
+
+E-mail: com `RESEND_API_KEY` o Resend entrega de verdade (`EMAIL_FROM` como
+remetente; o domínio precisa estar verificado, senão use
+`onboarding@resend.dev`, que só entrega para o dono da conta). **Sem chave o
+link é impresso no log do servidor** como `[email:console]` — o fluxo inteiro
+funciona em dev local. Rate limit: 10/10min por IP e 5/15min por email no
+`forgot`; 10/10min por IP no `reset`.
+
 ## API (resumo)
 
 | Método | Rota | Descrição |
@@ -320,6 +345,8 @@ src/
 | POST | `/api/auth/register` | Cadastro (name, email, password, role) |
 | POST | `/api/auth/login` | Login |
 | POST | `/api/auth/logout` | Logout |
+| POST | `/api/auth/forgot` | Pedido de recuperação (sempre 200 genérico) |
+| POST | `/api/auth/reset` | Troca a senha pelo token (uso único, derruba sessões) |
 | GET/POST | `/api/students` | Lista/cadastra alunos do professor |
 | GET/PUT | `/api/profiles?userId=` | Lê/salva perfil do atleta |
 | POST | `/api/workouts/generate` | Gera sugestão (IA ou simulado) — professor, cota 402 |

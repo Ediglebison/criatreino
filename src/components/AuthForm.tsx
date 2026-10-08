@@ -116,6 +116,17 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
         />
       </Field>
 
+      {mode === "login" && (
+        <div className="-mt-2 text-right">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-indigo-600 hover:underline"
+          >
+            {t("login.forgotLink")}
+          </Link>
+        </div>
+      )}
+
       {mode === "register" && (
         <fieldset>
           <legend className="mb-2 text-sm font-medium text-zinc-700">

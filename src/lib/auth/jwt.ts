@@ -19,6 +19,8 @@ export async function signSession(user: SessionUser): Promise<string> {
     role: user.role,
     locale: user.locale,
     professorId: user.professorId,
+    // Versão das sessões: bump em troca de senha invalida tokens antigos.
+    sessionVersion: user.sessionVersion ?? 0,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.id)
@@ -50,6 +52,10 @@ export async function verifySession(
             : "ALUNO",
       locale: String(payload.locale ?? "pt-BR"),
       professorId: (payload.professorId as string | null) ?? null,
+      // Fail-closed: claim ausente/inválido vira 0 (compatível com cookies
+      // emitidos antes da coluna existir — só morrem após 1º bump).
+      sessionVersion:
+        typeof payload.sessionVersion === "number" ? payload.sessionVersion : 0,
     };
   } catch {
     return null;

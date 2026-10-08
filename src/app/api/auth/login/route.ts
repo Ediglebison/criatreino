@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       role: user.role,
       locale: user.locale,
       professorId: user.professorId,
+      sessionVersion: user.sessionVersion,
     });
 
     return NextResponse.json({
