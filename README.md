@@ -373,26 +373,111 @@ funciona em dev local. Rate limit: 10/10min por IP e 5/15min por email no
 | POST | `/api/admin/subscriptions/cancel` | Cancela (`cancel`)/reativa (`reactivate`) assinatura — ADMIN |
 | GET | `/api/health` | Health check (200 ok / 503 banco fora) |
 
-## Produção (Vercel + Postgres gerenciado)
+## Produção (Vercel + Neon)
 
-1. **Banco** (Neon ou Supabase): criar o projeto e anotar o connection string —
-   precisa de `?sslmode=require` (provedores gerenciados recusam conexão em claro).
-2. **Migrações**: aplique uma vez a partir da sua máquina:
-   `DATABASE_URL="..." npm run db:deploy` (em CI/Vercel, o mesmo comando antes
-   do build). Nunca use `db:migrate` (dev) em produção.
-3. **Seed**: `DATABASE_URL="..." npm run db:seed` — em produção semeia **só o
-   catálogo** (contas demo omitidas; `SEED_DEMO=1` para forçar).
-4. **Vercel**: importe o repositório (framework Next.js). Build = `npm run build`
-   (já roda `prisma generate`), variáveis de ambiente do `.env.example` no
-   painel, `AUTH_SECRET` com ≥32 caracteres.
-5. **Stripe**: crie um produto com **3 preços recorrentes mensais** (BRL) —
-   Basic R$ 8,90, Pro R$ 29,90 e Ultimate R$ 119,90 — preencha
-   `STRIPE_SECRET_KEY` e os `STRIPE_PRICE_ID_{BASIC,PRO,ULTIMATE}`, e um
-   endpoint de webhook apontando para `https://<domínio>/api/billing/webhook`
-   com os eventos `checkout.session.completed`, `customer.subscription.updated`
-   e `customer.subscription.deleted` — copie o `whsec_` para
-   `STRIPE_WEBHOOK_SECRET`.
-6. **Health**: configure um uptime em `GET /api/health` (200 = ok, 503 = banco).
+Runbook de deploy — decisões atuais: **Neon**, **Stripe live** e domínio
+**`<projeto>.vercel.app`**.
+
+### 1) Neon — banco gerenciado
+
+1. Crie o projeto em [neon.tech](https://neon.tech) (região mais próxima;
+   ex.: `us-east-1`).
+2. Anote as duas connection strings do painel: **Pooled** (runtime, passa
+   pelo pgbouncer) e **Direct** (migrações — DDL não convive bem com o
+   pooler). As duas já vêm com `?sslmode=require`.
+
+### 2) Migrações + seed (uma vez, da sua máquina)
+
+```bash
+# Migrações — sempre na DIRECT:
+DATABASE_URL="<DIRECT_URL>" npm run db:deploy
+
+# Catálogo de exercícios (101) — NODE_ENV=production é OBRIGATÓRIO aqui:
+# sem ele o guard do seed não detecta produção e criaria as contas demo.
+NODE_ENV=production DATABASE_URL="<DIRECT_URL>" npm run db:seed
+```
+
+> No WSL com toolchain Windows, o prefixo de env não chega ao `node.exe`
+> sem `WSLENV`: `WSLENV="DATABASE_URL/w:NODE_ENV/w" DATABASE_URL="..." NODE_ENV=production npm run db:deploy`.
+
+### 3) Vercel — projeto e variáveis
+
+1. [vercel.com/new](https://vercel.com/new) → importe o repositório
+   (Next.js + npm detectados; o `engines` do `package.json` já seleciona
+   Node ≥22.12).
+2. **Configure as variáveis de ambiente (Production) ANTES do deploy:**
+
+| Variável | Valor |
+| --- | --- |
+| `DATABASE_URL` | connection string **Pooled** do Neon |
+| `AUTH_SECRET` | `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
+| `NEXT_PUBLIC_APP_URL` | `https://<projeto>.vercel.app` |
+| `OPENAI_API_KEY` | chave Groq (vazia ⇒ simulador) |
+| `OPENAI_BASE_URL` | `https://api.groq.com/openai/v1` |
+| `OPENAI_MODEL` | `openai/gpt-oss-120b` |
+| `STRIPE_SECRET_KEY` | `sk_live_...` |
+| `STRIPE_PRICE_ID_{BASIC,PRO,ULTIMATE}` | do `stripe:setup` live (passo 4) |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_...` do webhook (passo 5) |
+| `RESEND_API_KEY` | chave live do Resend |
+| `EMAIL_FROM` | `CrIA Treino <onboarding@resend.dev>` ou domínio verificado |
+
+3. Deploy: `git push` (integração GitHub) ou botão *Deploy*. O build roda
+   `prisma generate && next build` — **não toca no banco**.
+
+### 4) Stripe live — preços
+
+```bash
+# Da sua máquina, com a chave live no shell (o .env local fica intacto):
+STRIPE_SECRET_KEY="sk_live_..." npm run stripe:setup
+```
+
+Cria (idempotente) os 3 produtos/preços — Basic R$ 8,90 · Pro R$ 29,90 ·
+Ultimate R$ 119,90 — e **imprime** os `STRIPE_PRICE_ID_*` para colar no
+painel da Vercel.
+
+### 5) Stripe live — webhook
+
+Stripe dashboard em modo **live** → Developers → Webhooks → *Add endpoint*:
+
+- URL: `https://<projeto>.vercel.app/api/billing/webhook`
+- Eventos: `checkout.session.completed`, `customer.subscription.updated`,
+  `customer.subscription.deleted`
+
+Copie o `whsec_` para `STRIPE_WEBHOOK_SECRET` na Vercel e **faça um
+redeploy** (variáveis só aplicam em novo deploy).
+
+### 6) Conta administradora
+
+A produção nasce vazia (o seed omite as contas demo). Registre-se pelo site
+com o seu e-mail real e promova no SQL editor do Neon:
+
+```sql
+UPDATE "User" SET role = 'ADMIN' WHERE email = 'seu@email.com';
+```
+
+Entre novamente na sessão — o JWT carrega o `role`.
+
+### 7) E-mail (Resend)
+
+Com a chave live, o remetente deve ser um domínio verificado (Resend →
+Domains) ou o seu próprio e-mail da conta Resend. Teste `/forgot-password`
+em produção e confirme o recebimento.
+
+### 8) Smoke de produção
+
+- [ ] Landing, registro e login
+- [ ] Geração de treino com IA real (cota FREE = 3/mês)
+- [ ] Recuperação de senha chega por e-mail
+- [ ] Checkout live de R$ 8,90 → assinatura ativa no painel Stripe e cota
+      vira 20/mês (estorne/cancele em seguida se quiser)
+- [ ] `GET /api/health` → 200
+- [ ] Headers: sem `X-Powered-By`; CSP com nonce presente
+
+> **Notas:** o plano Hobby da Vercel limita funções a 60s — a rota de
+> geração já declara `export const maxDuration = 60`. CSP, CSRF por Origin
+> e rate limiting funcionam sem config extra na Vercel (o proxy roda na
+> borda). Uptime: aponte um monitor em `GET /api/health` (200 = ok,
+> 503 = banco).
 
 ## Próximos passos (app mobile)
 

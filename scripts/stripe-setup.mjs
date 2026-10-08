@@ -53,9 +53,16 @@ const PLANS = [
 ];
 
 async function main() {
-  const key = getEnv("STRIPE_SECRET_KEY");
+  // A chave pode vir do ambiente (produção):
+  //   STRIPE_SECRET_KEY="sk_live_..." node scripts/stripe-setup.mjs
+  // Nesse caso os IDs gerados são apenas IMPRESSOS — o .env local (que
+  // guarda os preços de teste) permanece intacto.
+  const keyFromShell = process.env.STRIPE_SECRET_KEY?.trim() ?? "";
+  const key = keyFromShell || getEnv("STRIPE_SECRET_KEY");
   if (!key) {
-    console.error("✖ STRIPE_SECRET_KEY ausente no .env");
+    console.error(
+      "✖ STRIPE_SECRET_KEY ausente (no .env ou exportada no ambiente)",
+    );
     process.exit(1);
   }
 
@@ -121,13 +128,25 @@ async function main() {
       );
     }
 
-    setEnv(`STRIPE_PRICE_ID_${spec.plan}`, price.id);
+    if (keyFromShell) {
+      console.log(
+        `  → registre no painel do servidor: STRIPE_PRICE_ID_${spec.plan}=${price.id}`,
+      );
+    } else {
+      setEnv(`STRIPE_PRICE_ID_${spec.plan}`, price.id);
+    }
   }
 
-  console.log("\n✔ STRIPE_PRICE_ID_{BASIC,PRO,ULTIMATE} gravados no .env");
-  console.log(
-    "Próximo passo: `stripe listen --forward-to localhost:3000/api/billing/webhook` e cole o whsec_ no STRIPE_WEBHOOK_SECRET.",
-  );
+  if (keyFromShell) {
+    console.log(
+      "\n✔ Preços live criados — copie os STRIPE_PRICE_ID_* acima para o painel (ex.: Vercel).",
+    );
+  } else {
+    console.log("\n✔ STRIPE_PRICE_ID_{BASIC,PRO,ULTIMATE} gravados no .env");
+    console.log(
+      "Próximo passo: `stripe listen --forward-to localhost:3000/api/billing/webhook` e cole o whsec_ no STRIPE_WEBHOOK_SECRET.",
+    );
+  }
 }
 
 main().catch((err) => {
