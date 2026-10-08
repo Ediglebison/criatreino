@@ -84,8 +84,8 @@ export function AssignDialog({ workoutId }: { workoutId: string }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-md rounded-xl bg-surface p-5 shadow-xl">
         <div className="mb-1 flex items-start justify-between gap-3">
           <div>
             <h3 className="font-semibold text-zinc-900">

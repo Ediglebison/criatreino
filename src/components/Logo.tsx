@@ -6,7 +6,7 @@ export function Logo({ href = "/" }: { href?: string }) {
       href={href}
       className="flex items-center gap-2 font-semibold tracking-tight text-zinc-900"
     >
-      <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+      <span className="flex size-8 items-center justify-center rounded-lg gradient-brand text-ink">
         <svg
           viewBox="0 0 24 24"
           fill="none"

@@ -29,7 +29,7 @@ export async function AppHeader({ variant = "marketing" }: { variant?: "marketin
   ) : null;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-zinc-200/60 bg-zinc-50/70 shadow-[0_1px_0_0_rgb(255_251_247/0.03)] backdrop-blur-xl">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-6">
           <Logo href={variant === "app" ? "/dashboard" : "/"} />
@@ -50,7 +50,7 @@ export async function AppHeader({ variant = "marketing" }: { variant?: "marketin
           ) : session ? (
             <Link
               href="/dashboard"
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+              className="rounded-lg gradient-brand px-3 py-1.5 text-sm font-medium text-ink hover:brightness-110"
             >
               {t("nav.dashboard")}
             </Link>
@@ -64,7 +64,7 @@ export async function AppHeader({ variant = "marketing" }: { variant?: "marketin
               </Link>
               <Link
                 href="/register"
-                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+                className="rounded-lg gradient-brand px-3 py-1.5 text-sm font-medium text-ink hover:brightness-110"
               >
                 {t("common.register")}
               </Link>

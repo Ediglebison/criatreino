@@ -107,7 +107,7 @@ export default async function DashboardPage({
           actions={
             <Link
               href="/workouts/new"
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+              className="inline-flex items-center gap-2 rounded-lg gradient-brand px-4 py-2 text-sm font-medium text-ink shadow-sm hover:brightness-110"
             >
               + {t("nav.newWorkout")}
             </Link>
@@ -162,7 +162,7 @@ export default async function DashboardPage({
               {session.role !== "ALUNO" && (
                 <Link
                   href="/workouts/new"
-                  className="mt-4 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                  className="mt-4 inline-block rounded-lg gradient-brand px-4 py-2 text-sm font-medium text-ink hover:brightness-110"
                 >
                   {t("dashboard.emptyWorkoutsCta")}
                 </Link>
@@ -226,7 +226,7 @@ export default async function DashboardPage({
                   <p>{t("dashboard.emptyStudents")}</p>
                   <Link
                     href="/students"
-                    className="mt-3 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                    className="mt-3 inline-block rounded-lg gradient-brand px-4 py-2 text-sm font-medium text-ink hover:brightness-110"
                   >
                     {t("dashboard.newStudent")}
                   </Link>

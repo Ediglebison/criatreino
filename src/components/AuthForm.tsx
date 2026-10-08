@@ -139,7 +139,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
                 className={`flex cursor-pointer flex-col gap-0.5 rounded-lg border p-3 transition-colors ${
                   role === r
                     ? "border-indigo-500 bg-indigo-50"
-                    : "border-zinc-300 bg-white hover:bg-zinc-50"
+                    : "border-zinc-300 bg-surface hover:bg-zinc-50"
                 }`}
               >
                 <span className="flex items-center gap-2 text-sm font-semibold text-zinc-900">

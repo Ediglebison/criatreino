@@ -282,7 +282,7 @@ export function WorkoutWizard({
             <span
               className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
                 i === currentIdx
-                  ? "bg-indigo-600 text-white"
+                  ? "gradient-brand text-ink"
                   : i < currentIdx
                     ? "bg-emerald-100 text-emerald-800"
                     : "bg-zinc-100 text-zinc-500"
@@ -291,9 +291,9 @@ export function WorkoutWizard({
               <span
                 className={`flex size-5 items-center justify-center rounded-full text-[10px] ${
                   i === currentIdx
-                    ? "bg-indigo-500 text-white"
+                    ? "gradient-brand text-ink"
                     : i < currentIdx
-                      ? "bg-emerald-500 text-white"
+                      ? "bg-emerald-500 text-ink"
                       : "bg-zinc-300 text-zinc-600"
                 }`}
               >

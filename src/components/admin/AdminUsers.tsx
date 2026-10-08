@@ -274,8 +274,8 @@ export function AdminUsers({ users, limits, meId }: Props) {
 
       {/* Modal de edição */}
       {editing && form && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-surface p-5 shadow-xl">
             <div className="mb-1 flex items-start justify-between gap-3">
               <div>
                 <h3 className="font-semibold text-zinc-900">

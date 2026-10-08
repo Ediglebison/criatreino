@@ -188,7 +188,7 @@ export function ReviewStep({
         <div className="mt-3 flex items-center gap-3">
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-indigo-200">
             <div
-              className="h-full rounded-full bg-indigo-600 transition-all"
+              className="h-full rounded-full gradient-brand transition-all"
               style={{ width: total ? `${Math.round((done / total) * 100)}%` : "0%" }}
             />
           </div>
@@ -407,7 +407,7 @@ export function ReviewStep({
                           ) : (
                             <ul
                               data-testid="alternatives"
-                              className="max-h-64 divide-y divide-indigo-100 overflow-y-auto rounded-lg border border-indigo-100 bg-white"
+                              className="max-h-64 divide-y divide-indigo-100 overflow-y-auto rounded-lg border border-indigo-100 bg-surface"
                             >
                               {visibleAlternatives.map((alt) => {
                                 const altWarning = exerciseWarning(alt, locale);

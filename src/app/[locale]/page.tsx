@@ -30,13 +30,14 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="relative overflow-hidden border-b border-zinc-200 bg-white">
-          <div className="absolute inset-0 bg-gradient-to-b from-indigo-50 via-white to-white" />
+        <section className="relative overflow-hidden border-b border-zinc-200 bg-surface">
+          {/* Brilho ember atrás do hero */}
+          <div className="absolute inset-0 bg-[radial-gradient(80%_55%_at_50%_-10%,rgb(245_158_11/0.16),transparent_65%)]" />
           <div className="relative mx-auto w-full max-w-6xl px-4 py-20 text-center sm:px-6 lg:px-8">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
               {t("hero.badge")}
             </span>
-            <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
+            <h1 className="mx-auto mt-6 max-w-3xl bg-gradient-to-r from-amber-900 via-orange-300 to-amber-600 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
               {t("hero.title")}
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-zinc-600">
@@ -45,13 +46,13 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/register"
-                className="rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+                className="rounded-lg gradient-brand px-6 py-3 text-sm font-semibold text-ink shadow-md shadow-orange-950/30 transition-all hover:brightness-110"
               >
                 {t("hero.ctaPrimary")}
               </Link>
               <a
                 href="#como-funciona"
-                className="rounded-lg border border-zinc-300 bg-white px-6 py-3 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"
+                className="rounded-lg border border-zinc-300 bg-surface px-6 py-3 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"
               >
                 {t("hero.ctaSecondary")}
               </a>
@@ -72,7 +73,7 @@ export default function LandingPage() {
             {FEATURE_KEYS.map((key) => (
               <div
                 key={key}
-                className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                className="rounded-xl border border-zinc-200 bg-surface p-5 shadow-sm transition-shadow hover:shadow-md"
               >
                 <span className="flex size-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
                   <svg
@@ -102,7 +103,7 @@ export default function LandingPage() {
         {/* Como funciona */}
         <section
           id="como-funciona"
-          className="border-y border-zinc-200 bg-white py-16"
+          className="border-y border-zinc-200 bg-surface py-16"
         >
           <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
             <h2 className="text-center text-3xl font-bold tracking-tight text-zinc-900">
@@ -125,8 +126,8 @@ export default function LandingPage() {
 
         {/* CTA */}
         <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="rounded-2xl bg-indigo-600 px-6 py-12 text-center shadow-lg">
-            <h2 className="text-2xl font-bold text-white sm:text-3xl">
+          <div className="rounded-2xl gradient-brand px-6 py-12 text-center shadow-lg">
+            <h2 className="text-2xl font-bold text-ink sm:text-3xl">
               {t("cta.title")}
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-indigo-100">
@@ -134,7 +135,7 @@ export default function LandingPage() {
             </p>
             <Link
               href="/register"
-              className="mt-6 inline-block rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-50"
+              className="mt-6 inline-block rounded-lg bg-surface px-6 py-3 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-50"
             >
               {t("cta.button")}
             </Link>
@@ -142,7 +143,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-zinc-200 bg-white">
+      <footer className="border-t border-zinc-200 bg-surface">
         <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <p className="text-sm font-medium text-zinc-700">

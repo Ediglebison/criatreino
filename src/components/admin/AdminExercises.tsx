@@ -331,8 +331,8 @@ export function AdminExercises({ exercises }: { exercises: AdminExercise[] }) {
 
       {/* Modal de criação/edição */}
       {form && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-surface p-5 shadow-xl">
             <div className="mb-1 flex items-start justify-between gap-3">
               <h3 className="font-semibold text-zinc-900">
                 {editingId
@@ -466,8 +466,8 @@ export function AdminExercises({ exercises }: { exercises: AdminExercise[] }) {
 
       {/* Confirmação de exclusão */}
       {deleting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-xl bg-surface p-5 shadow-xl">
             <h3 className="font-semibold text-zinc-900">
               {t("admin.exercises.deleteTitle")}
             </h3>

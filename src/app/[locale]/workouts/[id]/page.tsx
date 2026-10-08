@@ -108,7 +108,7 @@ export default async function WorkoutPage({ params }: PageProps) {
             <div className="flex flex-wrap items-center gap-2">
               <a
                 href={`/api/workouts/${workout.id}/pdf`}
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+                className="inline-flex items-center gap-2 rounded-lg gradient-brand px-4 py-2 text-sm font-medium text-ink shadow-sm hover:brightness-110"
               >
                 ⬇ {t("workout.exportPdf")}
               </a>

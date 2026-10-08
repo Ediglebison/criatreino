@@ -15,7 +15,7 @@ export function LangSwitcher() {
 
   return (
     <div
-      className="flex items-center gap-0.5 rounded-lg border border-zinc-200 bg-white p-0.5"
+      className="flex items-center gap-0.5 rounded-lg border border-zinc-200 bg-surface p-0.5"
       aria-label="Idioma"
     >
       {LOCALES.map((l) => (
@@ -25,7 +25,7 @@ export function LangSwitcher() {
           locale={l}
           className={`rounded-md px-2 py-1 text-xs font-semibold transition-colors ${
             l === locale
-              ? "bg-zinc-900 text-white"
+              ? "bg-zinc-100 text-zinc-900"
               : "text-zinc-500 hover:text-zinc-900"
           }`}
           aria-current={l === locale ? "true" : undefined}

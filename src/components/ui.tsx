@@ -8,13 +8,13 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline";
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:outline-indigo-600",
+    "gradient-brand text-ink shadow-md shadow-orange-950/30 hover:brightness-110 focus-visible:outline-amber-500",
   secondary:
-    "bg-zinc-900 text-white hover:bg-zinc-800 focus-visible:outline-zinc-900",
+    "bg-zinc-100 text-zinc-700 hover:bg-zinc-200/70 focus-visible:outline-zinc-500",
   outline:
-    "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50 focus-visible:outline-zinc-400",
+    "border border-zinc-300 bg-surface text-zinc-800 hover:bg-zinc-100 focus-visible:outline-zinc-400",
   ghost: "text-zinc-700 hover:bg-zinc-100 focus-visible:outline-zinc-400",
-  danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600",
+  danger: "bg-red-500 text-ink hover:bg-red-600 focus-visible:outline-red-500",
 };
 
 export function Button({
@@ -34,7 +34,7 @@ export function Button({
     size === "sm" ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm";
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${sizeCls} ${BUTTON_VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium shadow-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${sizeCls} ${BUTTON_VARIANTS[variant]} ${className}`}
       disabled={disabled || loading}
       {...props}
     >
@@ -78,7 +78,7 @@ export function Spinner({ className = "size-5" }: { className?: string }) {
 // ---------------------------------------------------------------------------
 
 const FIELD_BASE =
-  "block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-2 focus:outline-indigo-500/30 disabled:bg-zinc-100";
+  "block w-full rounded-lg border border-zinc-300 bg-surface px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-2 focus:outline-indigo-500/30 disabled:bg-zinc-100";
 
 export function Input({
   className = "",
@@ -162,7 +162,7 @@ export function Card({
   children: ReactNode;
 }) {
   return (
-    <div className={`rounded-xl border border-zinc-200 bg-white p-5 shadow-sm ${className}`}>
+    <div className={`rounded-xl border border-zinc-200 bg-surface p-5 shadow-sm ${className}`}>
       {children}
     </div>
   );

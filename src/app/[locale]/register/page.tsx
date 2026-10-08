@@ -19,7 +19,7 @@ export default async function RegisterPage() {
           <h1 className="text-2xl font-bold text-zinc-900">{t("title")}</h1>
           <p className="mt-1 text-sm text-zinc-500">{t("subtitle")}</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-zinc-200 bg-surface p-6 shadow-sm">
           <AuthForm mode="register" />
         </div>
       </main>

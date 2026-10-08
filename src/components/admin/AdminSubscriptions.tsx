@@ -214,8 +214,8 @@ export function AdminSubscriptions({ items, testMode }: Props) {
 
       {/* Confirmação */}
       {target && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-xl bg-surface p-5 shadow-xl">
             <h3 className="font-semibold text-zinc-900">
               {target.live?.cancelAtPeriodEnd
                 ? t("admin.subs.reactivateConfirm", { name: target.name })

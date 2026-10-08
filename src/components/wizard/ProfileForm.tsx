@@ -245,7 +245,7 @@ export function ProfileForm({ value, onChange, error }: Props) {
                   className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
                     active
                       ? "border-amber-400 bg-amber-100 text-amber-900"
-                      : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                      : "border-zinc-300 bg-surface text-zinc-700 hover:bg-zinc-50"
                   }`}
                   aria-pressed={active}
                 >
@@ -292,8 +292,8 @@ export function ProfileForm({ value, onChange, error }: Props) {
                   onClick={() => update({ daysPerWeek: d })}
                   className={`size-9 rounded-lg border text-sm font-semibold transition-colors ${
                     value.daysPerWeek === d
-                      ? "border-indigo-600 bg-indigo-600 text-white"
-                      : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                      ? "border-indigo-600 gradient-brand text-ink"
+                      : "border-zinc-300 bg-surface text-zinc-700 hover:bg-zinc-50"
                   }`}
                   aria-pressed={value.daysPerWeek === d}
                 >
@@ -330,7 +330,7 @@ export function ProfileForm({ value, onChange, error }: Props) {
                   className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
                     value.experience === lvl
                       ? "border-indigo-500 bg-indigo-50 text-indigo-900"
-                      : "border-zinc-300 bg-white text-zinc-700"
+                      : "border-zinc-300 bg-surface text-zinc-700"
                   }`}
                 >
                   <input
@@ -363,7 +363,7 @@ export function ProfileForm({ value, onChange, error }: Props) {
                   className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
                     active
                       ? "border-indigo-500 bg-indigo-50 text-indigo-900"
-                      : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                      : "border-zinc-300 bg-surface text-zinc-700 hover:bg-zinc-50"
                   }`}
                 >
                   <Checkbox
