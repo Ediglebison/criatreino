@@ -24,9 +24,11 @@ async function main() {
     console.error("✖ exporte a chave: STRIPE_SECRET_KEY=\"sk_live_...\"");
     process.exit(1);
   }
-  if (!key.startsWith("sk_live")) {
+  // sk_live_ (chave secreta padrão) ou rk_live_ (restricted key com
+  // permissão de Webhooks) — ambas operam em modo live.
+  if (!/^[sr]k_live_/.test(key)) {
     console.error(
-      "✖ esta é uma chave de TESTE — para o webhook de produção use sk_live_",
+      "✖ esta não é uma chave live (sk_live_.../rk_live_...) — para o webhook de produção use a live",
     );
     process.exit(1);
   }
