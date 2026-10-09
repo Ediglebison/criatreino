@@ -17,9 +17,10 @@ type PaidPlan = "BASIC" | "PRO" | "ULTIMATE";
 /**
  * Inicia o pagamento de um plano pago.
  *
- * - FREE  → cria uma sessão de Checkout do Stripe (assinatura mensal).
- * - pago   → troca o preço da assinatura existente (upgrade/downgrade com
- *            prorata) e já grava o plano; o webhook do Stripe reconcilia.
+ * - sem assinatura Stripe (FREE ou plano manual do admin) → cria uma sessão
+ *   de Checkout do Stripe (assinatura mensal);
+ * - assinante real → troca o preço da assinatura existente (upgrade/downgrade
+ *   com prorata) e já grava o plano; o webhook do Stripe reconcilia.
  *
  * Requer STRIPE_SECRET_KEY + STRIPE_PRICE_ID_<PLANO>; sem isso responde
  * 503 e a UI esconde os planos.
@@ -57,18 +58,19 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "notFound" }, { status: 404 });
     }
-    if (user.plan === plan) {
+    // Plano manual (override do admin) sem assinatura Stripe não bloqueia o
+    // checkout: só assinante REAL cai nos guardas abaixo — quem nunca pagou
+    // pode sempre iniciar uma sessão nova, e o webhook reconcilia depois.
+    const hasSubscription = Boolean(user.stripeSubscriptionId);
+    if (hasSubscription && user.plan === plan) {
       return NextResponse.json({ error: "samePlan" }, { status: 409 });
     }
 
     // Já assinante: troca o preço da assinatura ativa (mesma assinatura,
     // prorata calculado pelo Stripe) em vez de criar uma segunda cobrança.
-    if (user.plan !== "FREE") {
-      if (!user.stripeSubscriptionId) {
-        return NextResponse.json({ error: "alreadySubscribed" }, { status: 409 });
-      }
+    if (hasSubscription && user.plan !== "FREE") {
       try {
-        const sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+        const sub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId!);
         if (!["active", "trialing"].includes(sub.status)) {
           return NextResponse.json({ error: "subscriptionInactive" }, { status: 409 });
         }
