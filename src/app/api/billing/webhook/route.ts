@@ -8,7 +8,8 @@ export const maxDuration = 30;
 
 /**
  * Webhook do Stripe — sincroniza o plano do usuário.
- * Assinatura verificada com STRIPE_WEBHOOK_SECRET; sem configuração → 503.
+ * Assinatura verificada com STRIPE_WEBHOOK_SECRET (aceita lista separada por
+ * vírgula: endpoint clássico + destino v2); sem configuração → 503.
  *
  * Eventos tratados:
  * - checkout.session.completed → ativa o plano do metadata e grava customer/subscription
@@ -39,11 +40,26 @@ export async function POST(request: NextRequest) {
 
     // Corpo bruto obrigatório para a verificação de assinatura.
     const payload = await request.text();
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(payload, signature, secret!);
-    } catch (error) {
-      console.error("[billing:webhook] assinatura inválida", error);
+    // STRIPE_WEBHOOK_SECRET aceita vários secrets separados por vírgula
+    // (endpoint clássico v1 + destino de evento v2); valor único continua
+    // funcionando igual. Cada entrega é validada contra todos, na ordem.
+    const secrets = (secret ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    let event: Stripe.Event | null = null;
+    for (const candidate of secrets) {
+      try {
+        event = stripe.webhooks.constructEvent(payload, signature, candidate);
+        break;
+      } catch {
+        // assinatura não bate com este secret → tenta o próximo
+      }
+    }
+    if (!event) {
+      console.error(
+        `[billing:webhook] assinatura inválida em ${secrets.length} secret(s)`,
+      );
       return NextResponse.json({ error: "invalidSignature" }, { status: 400 });
     }
 
