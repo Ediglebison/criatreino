@@ -1,6 +1,7 @@
 // Recria o endpoint de webhook CLÁSSICO (eventos v1) para produção.
 //
 //   STRIPE_SECRET_KEY="sk_live_..." node scripts/stripe-webhook-setup.mjs
+import { writeFileSync } from "node:fs";
 //
 // Por que clássico e não "destino de evento" (v2): a rota
 // /api/billing/webhook foi implementada e testada contra o formato v1
@@ -11,6 +12,10 @@
 const WEBHOOK_URL =
   process.env.BILLING_WEBHOOK_URL ??
   "https://criatreino.vercel.app/api/billing/webhook";
+
+// --secret-out <arquivo>: grava o signing secret num arquivo (o Stripe só o
+// revela na criação — captura programática sem passar por parsing/manual).
+const secretOutIdx = process.argv.indexOf("--secret-out");
 
 const EVENTS = [
   "checkout.session.completed",
@@ -75,6 +80,12 @@ async function main() {
   console.log(
     "╚══════════════════════════════════════════════════════════════╝",
   );
+
+  if (secretOutIdx !== -1 && process.argv[secretOutIdx + 1]) {
+    const file = process.argv[secretOutIdx + 1];
+    writeFileSync(file, endpoint.secret, { encoding: "utf8", flag: "w" });
+    console.log(`  (secret também gravado em ${file})`);
+  }
   console.log("\nPróximos passos:");
   console.log(
     "1) Vercel → Settings → Environment Variables → STRIPE_WEBHOOK_SECRET" +
