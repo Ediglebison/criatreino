@@ -41,7 +41,7 @@ Pedido por e-mail com token de uso único; a troca derruba todas as sessões abe
 2. `src/components/ForgotPasswordForm.tsx` — envia POST para `/api/auth/forgot`
 3. `src/app/api/auth/forgot/route.ts` — rate limit; resposta sempre `200` (anti-enumeração)
 4. `src/lib/auth/reset.ts` — gera token de 256 bits e grava só o hash SHA-256
-5. `src/lib/email.ts` — envia o link via Resend (sem chave, imprime no log do servidor)
+5. `src/lib/email.ts` — envia o link pelo transporte ativo (`SMTP_PASS` → Gmail SMTP, senão Resend, senão log do servidor)
 6. `src/app/[locale]/reset-password/page.tsx` + `src/components/ResetPasswordForm.tsx` — troca a senha
 7. `src/app/api/auth/reset/route.ts` — consome o token (uso único) e incrementa `User.sessionVersion`, invalidando cookies antigos
 

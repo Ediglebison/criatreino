@@ -78,7 +78,16 @@ npm run dev             # http://localhost:3000
 | `BILLING_ULTIMATE_MONTHLY_LIMIT` | Gerações/mês do plano Ultimate (padrão `500`) |
 | `PG_POOL_MAX` | Conexões por instância do pool (padrão `5`) |
 | `RESEND_API_KEY` | Chave do Resend (e-mails de recuperação de senha). **Vazia** = link impresso no log do servidor (dev/local) |
-| `EMAIL_FROM` | Remetente dos e-mails (padrão `CrIA Treino <onboarding@resend.dev>`) |
+| `SMTP_HOST` | Servidor SMTP (padrão `smtp.gmail.com`) |
+| `SMTP_PORT` | Porta SMTP com STARTTLS (padrão `587`) |
+| `SMTP_USER` | Usuário SMTP — no Gmail, o próprio e-mail (que também vira o remetente padrão) |
+| `SMTP_PASS` | Senha de app do Gmail (16 caracteres). **Presente** = e-mails saem via SMTP para qualquer destinatário |
+| `EMAIL_FROM` | Remetente dos e-mails (padrão por transporte: `CrIA Treino <SMTP_USER>` no SMTP, `CrIA Treino <onboarding@resend.dev>` no Resend) |
+
+Transporte de e-mail por credencial, nesta ordem: `SMTP_PASS` (Gmail SMTP) →
+`RESEND_API_KEY` (Resend) → console (link no log do servidor). Sem domínio
+verificado, o Resend só entrega para o dono da conta Resend — por isso o
+Gmail SMTP é o caminho para chegar a qualquer destinatário.
 
 Variáveis obrigatórias são validadas no boot (`src/lib/env.ts`): em produção um
 deploy sem `AUTH_SECRET`/`DATABASE_URL` falha no log de inicialização em vez de
@@ -339,12 +348,14 @@ src/
 4. sucesso incrementa `sessionVersion` → **todas as sessões abertas caem** e o
    login é redirecionado com o aviso “senha redefinida”.
 
-E-mail: com `RESEND_API_KEY` o Resend entrega de verdade (`EMAIL_FROM` como
-remetente; o domínio precisa estar verificado, senão use
-`onboarding@resend.dev`, que só entrega para o dono da conta). **Sem chave o
-link é impresso no log do servidor** como `[email:console]` — o fluxo inteiro
-funciona em dev local. Rate limit: 10/10min por IP e 5/15min por email no
-`forgot`; 10/10min por IP no `reset`.
+E-mail: o transporte segue a credencial presente — com `SMTP_PASS` o Gmail
+SMTP entrega para qualquer destinatário (`SMTP_USER` como remetente padrão);
+sem SMTP mas com `RESEND_API_KEY` o Resend entrega de verdade (`EMAIL_FROM`
+como remetente; sem domínio verificado o `onboarding@resend.dev` só entrega
+para o dono da conta). **Sem nenhuma das duas o link é impresso no log do
+servidor** como `[email:console]` — o fluxo inteiro funciona em dev local.
+Rate limit: 10/10min por IP e 5/15min por email no `forgot`; 10/10min por IP
+no `reset`.
 
 ## API (resumo)
 

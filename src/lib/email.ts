@@ -1,15 +1,23 @@
+import { createTransport } from "nodemailer";
 import { Resend } from "resend";
 
 /**
  * Envio de e-mails transacionais.
  *
- * - Com `RESEND_API_KEY`: entrega real via Resend (indicado na Vercel;
- *   free tier cobre o volume de recuperação de senha).
- * - Sem chave: imprime o conteúdo no log do servidor (`[email:console]`),
- *   então o fluxo inteiro funciona em dev/local — o link aparece no console.
+ * Transporte escolhido pela credencial presente, nesta ordem:
  *
- * Remetente: `EMAIL_FROM` ou o endereço de onboarding do Resend (que só
- * entrega para o próprio dono da conta — ok para testar).
+ * - Com `SMTP_PASS`: entrega real via SMTP (Gmail com app password por
+ *   padrão) — funciona para qualquer destinatário, sem domínio verificado.
+ * - Sem `SMTP_PASS` mas com `RESEND_API_KEY`: entrega real via Resend
+ *   (free tier cobre o volume de recuperação de senha; sem domínio
+ *   verificado só entrega para o dono da conta).
+ * - Sem nenhuma das duas: imprime o conteúdo no log do servidor
+ *   (`[email:console]`), então o fluxo inteiro funciona em dev/local —
+ *   o link aparece no console.
+ *
+ * Remetente: `EMAIL_FROM` sobrepõe; senão o padrão do transporte —
+ * a própria conta SMTP (o Gmail recusa remetente diferente sem
+ * configuração extra) ou o endereço de onboarding do Resend.
  */
 
 export type EmailInput = {
@@ -20,12 +28,46 @@ export type EmailInput = {
 };
 
 export type EmailResult = {
-  transport: "resend" | "console";
+  transport: "smtp" | "resend" | "console";
   delivered: boolean;
 };
 
-/** Envia um e-mail. Lança em falha do provedor — o chamador decide o tratamento. */
+/**
+ * Envia via SMTP (Gmail por padrão). `SMTP_PASS` é o gatilho do
+ * transporte — presente, o envio sai por aqui para qualquer
+ * destinatário. O remetente padrão é a própria conta SMTP: o Gmail
+ * só aceita o endereço do usuário sem domínio configurado.
+ */
+async function sendViaSmtp(input: EmailInput): Promise<EmailResult> {
+  const user = process.env.SMTP_USER || "";
+  const transporter = createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT || "587"),
+    // Porta 587 do Gmail: conexão em claro e STARTTLS obrigatório.
+    secure: false,
+    requireTLS: true,
+    auth: { user, pass: process.env.SMTP_PASS || "" },
+  });
+  const from = process.env.EMAIL_FROM || `CrIA Treino <${user}>`;
+  await transporter.sendMail({
+    from,
+    to: input.to,
+    subject: input.subject,
+    html: input.html,
+    text: input.text,
+  });
+  return { transport: "smtp", delivered: true };
+}
+
+/**
+ * Envia um e-mail pelo transporte ativo (SMTP > Resend > console).
+ * Lança em falha do provedor — o chamador decide o tratamento.
+ */
 export async function sendEmail(input: EmailInput): Promise<EmailResult> {
+  if (process.env.SMTP_PASS) {
+    return sendViaSmtp(input);
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.log(
