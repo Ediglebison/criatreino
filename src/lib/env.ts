@@ -63,6 +63,15 @@ export function validateEnv(): void {
     );
   }
 
+  // SMTP_PASS liga o transporte SMTP, mas sem usuário a auth sai vazia
+  const hasSmtpPass = Boolean(process.env.SMTP_PASS);
+  const hasSmtpUser = Boolean(process.env.SMTP_USER?.trim());
+  if (hasSmtpPass && !hasSmtpUser) {
+    console.warn(
+      "[env] SMTP_PASS presente sem SMTP_USER — a autenticação falharia no primeiro envio (defina SMTP_USER, ex.: sua conta Gmail)",
+    );
+  }
+
   if (problems.length > 0) {
     const banner = [
       "",
