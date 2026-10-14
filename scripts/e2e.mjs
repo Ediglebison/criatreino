@@ -594,13 +594,19 @@ async function main() {
         ["prof@criatreino.dev"],
       );
       const profId = user.rows[0]?.id ?? "";
-      const rows = profId
-        ? await db.query(
-            'SELECT count(*)::int AS n FROM "PasswordReset" WHERE "userId" = $1',
-            [profId],
-          )
-        : { rows: [{ n: 0 }] };
-      check("token de reset criado no banco", rows.rows[0].n === 1, `n=${rows.rows[0].n}`);
+      // O token nasce pós-resposta (after) — espera o registro chegar ao banco.
+      let resetTokens = 0;
+      for (let wait = 0; wait < 20 && resetTokens !== 1; wait++) {
+        await new Promise((r) => setTimeout(r, 250));
+        const rows = profId
+          ? await db.query(
+              'SELECT count(*)::int AS n FROM "PasswordReset" WHERE "userId" = $1',
+              [profId],
+            )
+          : { rows: [{ n: 0 }] };
+        resetTokens = rows.rows[0].n;
+      }
+      check("token de reset criado no banco", resetTokens === 1, `n=${resetTokens}`);
 
       // c) O e-mail "chega" ao teste: token conhecido + hash gravado direto
       const token = randomBytes(32).toString("base64url");

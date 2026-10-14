@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+.agents/
 
 # debug
 npm-debug.log*
@@ -49,3 +50,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+.memory/
+opencode.json
+.ignore

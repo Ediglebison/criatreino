@@ -24,10 +24,6 @@ export type EmailResult = {
   delivered: boolean;
 };
 
-export function emailConfigured(): boolean {
-  return !!process.env.RESEND_API_KEY;
-}
-
 /** Envia um e-mail. Lança em falha do provedor — o chamador decide o tratamento. */
 export async function sendEmail(input: EmailInput): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -51,6 +47,23 @@ export async function sendEmail(input: EmailInput): Promise<EmailResult> {
     throw new Error(`resend: ${error.name}: ${error.message}`);
   }
   return { transport: "resend", delivered: true };
+}
+
+const RETRY_DELAY_MS = 1000;
+
+/**
+ * Envia com uma única repetição após falha transitória do provedor.
+ * A falha final é relançada — quem chama decide o tratamento.
+ */
+export async function sendEmailWithRetry(
+  input: EmailInput,
+): Promise<EmailResult> {
+  try {
+    return await sendEmail(input);
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    return sendEmail(input);
+  }
 }
 
 function escapeHtml(value: string): string {
