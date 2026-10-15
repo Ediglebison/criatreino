@@ -165,7 +165,8 @@
     "profile": "Perfil",
     "menu": "Menu",
     "userMenu": "Menu do usuário",
-    "admin": "Admin"
+    "admin": "Admin",
+    "billing": "Planos"
   },
   "dashboard": {
     "title": "Painel",
@@ -193,7 +194,8 @@
       "emailTaken": "Este e-mail já está cadastrado. Use o vínculo por e-mail ao enviar um treino."
     },
     "seeAll": "Ver todos",
-    "viewWorkout": "Ver treino"
+    "viewWorkout": "Ver treino",
+    "managePlan": "Gerenciar"
   },
   "goals": {
     "FAT_LOSS": "Emagrecimento",
@@ -484,7 +486,28 @@
     "choosePlan": "Planos disponíveis",
     "currentPlan": "Plano atual",
     "samePlan": "Você já está neste plano.",
-    "quotaOutMax": "Limite mensal atingido. Volte no próximo mês — seu plano continua ativo."
+    "quotaOutMax": "Limite mensal atingido. Volte no próximo mês — seu plano continua ativo.",
+    "pageTitle": "Planos e assinatura",
+    "pageSubtitle": "Gerencie seu plano, sua cota e sua assinatura.",
+    "alunoNotice": "Planos e assinatura são para contas de professor.",
+    "backToDashboard": "Ir para o painel",
+    "mySubscription": "Minha assinatura",
+    "noSubscription": "Você não tem uma assinatura ativa.",
+    "accessUntil": "Cancelada — acesso até {date}",
+    "cancelSubscription": "Cancelar assinatura",
+    "reactivateSubscription": "Reativar assinatura",
+    "cancelConfirm": "Agendar o cancelamento da sua assinatura? Seu acesso continua até o fim do período já pago.",
+    "reactivateConfirm": "Remover o cancelamento agendado da sua assinatura?",
+    "cancelScheduledOk": "Cancelamento agendado; seu acesso continua até o fim do período.",
+    "reactivateOk": "Cancelamento removido; assinatura ativa.",
+    "subStatus_active": "Ativa",
+    "subStatus_trialing": "Trial",
+    "subStatus_past_due": "Em atraso",
+    "subStatus_incomplete": "Incompleta",
+    "subStatus_incomplete_expired": "Expirada",
+    "subStatus_canceled": "Cancelada",
+    "subStatus_unpaid": "Não paga",
+    "subStatus_paused": "Pausada"
   },
   "admin": {
     "title": "Painel administrativo",

@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/guard";
 import { prisma } from "@/lib/db";
-import { billingEnabled, getStripe } from "@/lib/billing/stripe";
+import { billingEnabled } from "@/lib/billing/stripe";
+import { setCancelAtPeriodEnd } from "@/lib/billing/subscription";
 
 const bodySchema = z.object({
   userId: z.string().min(1),
@@ -46,20 +47,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "noSubscription" }, { status: 404 });
     }
 
-    const stripe = await getStripe();
-    if (!stripe) {
-      return NextResponse.json({ error: "billingDisabled" }, { status: 503 });
-    }
-
     try {
-      const subscription = await stripe.subscriptions.update(
+      const summary = await setCancelAtPeriodEnd(
         user.stripeSubscriptionId,
-        { cancel_at_period_end: action === "cancel" },
+        action === "cancel",
       );
       return NextResponse.json({
         subscription: {
-          status: subscription.status,
-          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          status: summary.status,
+          cancelAtPeriodEnd: summary.cancelAtPeriodEnd,
         },
       });
     } catch (error) {

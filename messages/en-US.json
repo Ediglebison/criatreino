@@ -165,7 +165,8 @@
     "profile": "Profile",
     "menu": "Menu",
     "userMenu": "User menu",
-    "admin": "Admin"
+    "admin": "Admin",
+    "billing": "Plans"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -193,7 +194,8 @@
       "emailTaken": "This email is already registered. Use the email link when sending a workout."
     },
     "seeAll": "See all",
-    "viewWorkout": "View workout"
+    "viewWorkout": "View workout",
+    "managePlan": "Manage"
   },
   "goals": {
     "FAT_LOSS": "Fat loss",
@@ -484,7 +486,28 @@
     "choosePlan": "Available plans",
     "currentPlan": "Current plan",
     "samePlan": "You're already on this plan.",
-    "quotaOutMax": "Monthly limit reached. Come back next month — your plan stays active."
+    "quotaOutMax": "Monthly limit reached. Come back next month — your plan stays active.",
+    "pageTitle": "Plans & subscription",
+    "pageSubtitle": "Manage your plan, quota and subscription.",
+    "alunoNotice": "Plans and subscriptions are for coach accounts.",
+    "backToDashboard": "Go to the dashboard",
+    "mySubscription": "My subscription",
+    "noSubscription": "You don't have an active subscription.",
+    "accessUntil": "Canceled — access until {date}",
+    "cancelSubscription": "Cancel subscription",
+    "reactivateSubscription": "Reactivate subscription",
+    "cancelConfirm": "Schedule the cancellation of your subscription? Your access continues until the end of the paid period.",
+    "reactivateConfirm": "Remove the scheduled cancellation of your subscription?",
+    "cancelScheduledOk": "Cancellation scheduled; your access continues until the end of the period.",
+    "reactivateOk": "Cancellation removed; subscription active.",
+    "subStatus_active": "Active",
+    "subStatus_trialing": "Trial",
+    "subStatus_past_due": "Past due",
+    "subStatus_incomplete": "Incomplete",
+    "subStatus_incomplete_expired": "Expired",
+    "subStatus_canceled": "Canceled",
+    "subStatus_unpaid": "Unpaid",
+    "subStatus_paused": "Paused"
   },
   "admin": {
     "title": "Admin panel",

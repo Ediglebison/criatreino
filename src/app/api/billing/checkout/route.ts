@@ -107,8 +107,8 @@ export async function POST(request: NextRequest) {
       metadata: { userId: user.id, plan },
       subscription_data: { metadata: { userId: user.id, plan } },
       allow_promotion_codes: true,
-      success_url: `${origin}/dashboard?billing=success`,
-      cancel_url: `${origin}/dashboard?billing=cancel`,
+      success_url: `${origin}/billing?billing=success`,
+      cancel_url: `${origin}/billing?billing=cancel`,
     });
 
     return NextResponse.json({ url: checkout.url });

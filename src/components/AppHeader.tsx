@@ -22,6 +22,9 @@ export async function AppHeader({ variant = "marketing" }: { variant?: "marketin
       {canTeach(session.role) && (
         <NavLink href="/students">{t("nav.students")}</NavLink>
       )}
+      {canTeach(session.role) && (
+        <NavLink href="/billing">{t("nav.billing")}</NavLink>
+      )}
       {session.role === "ADMIN" && (
         <NavLink href="/admin">{t("nav.admin")}</NavLink>
       )}
@@ -81,6 +84,9 @@ export async function AppHeader({ variant = "marketing" }: { variant?: "marketin
             <NavLink href="/workouts/new">{t("nav.newWorkout")}</NavLink>
             {canTeach(session!.role) && (
               <NavLink href="/students">{t("nav.students")}</NavLink>
+            )}
+            {canTeach(session!.role) && (
+              <NavLink href="/billing">{t("nav.billing")}</NavLink>
             )}
             {session!.role === "ADMIN" && (
               <NavLink href="/admin">{t("nav.admin")}</NavLink>

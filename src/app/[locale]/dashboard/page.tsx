@@ -1,14 +1,11 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { AppHeader } from "@/components/AppHeader";
-import { Alert, Badge, Card, PageHeader } from "@/components/ui";
-import { BillingCard } from "@/components/BillingCard";
+import { Badge, Card, PageHeader } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { getQuotaStatus } from "@/lib/billing/quota";
-import { availablePlans, billingEnabled } from "@/lib/billing/stripe";
-import { getMonthlyLimits } from "@/lib/billing/settings";
 import { canTeach } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
@@ -18,18 +15,19 @@ function formatDate(value: Date | string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
 }
 
+function capitalize(value: string): string {
+  return value.charAt(0) + value.slice(1).toLowerCase();
+}
+
 export default async function DashboardPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ billing?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
 
   const { locale } = await params;
-  const { billing } = await searchParams;
   const t = await getTranslations();
   const isProfessor = canTeach(session.role);
 
@@ -77,21 +75,6 @@ export default async function DashboardPage({
 
   // Cota mensal de gerações (só professores geram treinos)
   const quota = isProfessor ? await getQuotaStatus(session.id) : null;
-  const checkoutOn = isProfessor && billingEnabled();
-  // Planos pagos com preço configurado (para a UI de assinatura)
-  const planLimits = checkoutOn ? await getMonthlyLimits() : null;
-  const paidPlans =
-    planLimits !== null
-      ? availablePlans().map((plan) => ({ plan, limit: planLimits[plan] }))
-      : [];
-
-  // Retorno do Stripe Checkout (?billing=success|cancel)
-  const billingNotice =
-    billing === "success"
-      ? { tone: "success" as const, text: t("billing.success") }
-      : billing === "cancel"
-        ? { tone: "info" as const, text: t("billing.cancelled") }
-        : null;
 
   return (
     <>
@@ -114,13 +97,6 @@ export default async function DashboardPage({
           }
         />
 
-        {/* Retorno do Stripe Checkout */}
-        {billingNotice && (
-          <Alert tone={billingNotice.tone} className="mb-4" data-testid="billing-notice">
-            {billingNotice.text}
-          </Alert>
-        )}
-
         {/* Estatísticas */}
         <div className="grid gap-4 sm:grid-cols-3">
           <StatCard label={t("dashboard.stats.workouts")} value={totalWorkouts} />
@@ -130,11 +106,31 @@ export default async function DashboardPage({
           )}
         </div>
 
-        {/* Plano e cota de gerações (professor) */}
+        {/* Resumo do plano (professor) — gestão completa em /billing */}
         {quota && (
-          <div className="mt-4">
-            <BillingCard quota={quota} checkoutEnabled={checkoutOn} plans={paidPlans} />
-          </div>
+          <Card className="mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-zinc-500">{t("billing.plan")}</p>
+                <p className="mt-1 font-semibold text-zinc-900">
+                  {t(`billing.plan${capitalize(quota.plan)}`)}
+                </p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {t("billing.usage")}:{" "}
+                  {t("billing.usageValue", {
+                    used: quota.used,
+                    limit: quota.limit,
+                  })}
+                </p>
+              </div>
+              <Link
+                href="/billing"
+                className="rounded-lg gradient-brand px-4 py-2 text-sm font-medium text-ink shadow-sm hover:brightness-110"
+              >
+                {t("dashboard.managePlan")}
+              </Link>
+            </div>
+          </Card>
         )}
 
         {/* Treinos recentes */}

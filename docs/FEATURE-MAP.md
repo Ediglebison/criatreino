@@ -49,13 +49,13 @@ Pedido por e-mail com token de uso único; a troca derruba todas as sessões abe
 
 ## Dashboard
 
-Painel do usuário com estatísticas, cota de gerações, treinos recentes e alunos.
+Painel do usuário com estatísticas, resumo do plano, treinos recentes e alunos.
 
 **Flow:**
 
-1. `src/app/[locale]/dashboard/page.tsx` — contagens via Prisma, lista de treinos visíveis e status da cota
+1. `src/app/[locale]/dashboard/page.tsx` — contagens via Prisma, lista de treinos visíveis e cota do mês (professores)
 2. `src/lib/billing/quota.ts` — cota do mês corrente (professores)
-3. `src/components/BillingCard.tsx` — mostra plano, cota restante e planos pagos
+3. `src/app/[locale]/billing/page.tsx` — card-resumo aponta para a gestão completa de planos/assinatura
 
 ---
 
@@ -170,10 +170,25 @@ Upgrade/change de plano Básico/Pro/Ultimate via Checkout ou troca de preço na 
 
 **Flow:**
 
-1. `src/components/BillingCard.tsx` — escolha do plano no dashboard
-2. `src/app/api/billing/checkout/route.ts` — cria sessão de Checkout ou atualiza a assinatura existente (prorata)
-3. `src/lib/billing/stripe.ts` — cliente lazy; sem chaves responde `503 billingDisabled`
-4. `src/app/[locale]/dashboard/page.tsx` — aviso `?billing=success|cancel`
+1. `src/app/[locale]/billing/page.tsx` — página de planos (professor); renderiza o `BillingCard`
+2. `src/components/BillingCard.tsx` — escolha do plano
+3. `src/app/api/billing/checkout/route.ts` — cria sessão de Checkout ou atualiza a assinatura existente (prorata)
+4. `src/lib/billing/stripe.ts` — cliente lazy; sem chaves responde `503 billingDisabled`
+5. `src/app/[locale]/billing/page.tsx` — aviso `?billing=success|cancel`
+
+---
+
+## Cancelar ou reativar assinatura (autoatendimento)
+
+O próprio professor agenda ou remove o cancelamento da própria assinatura (cancel_at_period_end).
+
+**Flow:**
+
+1. `src/app/[locale]/billing/page.tsx` — seção "Minha assinatura" com status ao vivo
+2. `src/components/MySubscription.tsx` — ações cancelar/reativar com confirmação
+3. `src/app/api/billing/cancel/route.ts` — aplica `cancel_at_period_end` na assinatura do usuário da sessão
+4. `src/lib/billing/subscription.ts` — resumo e atualização da assinatura (compartilhado com a rota admin)
+5. `src/app/api/billing/webhook/route.ts` — devolve o usuário a FREE quando o Stripe confirmar o fim
 
 ---
 
@@ -235,8 +250,9 @@ Status ao vivo no Stripe com agendamento de cancelamento e reativação.
 
 1. `src/app/[locale]/admin/subscriptions/page.tsx` — assinantes + status ao vivo do Stripe
 2. `src/components/admin/AdminSubscriptions.tsx` — ações cancel/reactivate
-3. `src/app/api/admin/subscriptions/cancel/route.ts` — `cancel_at_period_end` na assinatura Stripe
-4. `src/app/api/billing/webhook/route.ts` — devolve o usuário a FREE quando o Stripe confirmar o fim
+3. `src/app/api/admin/subscriptions/cancel/route.ts` — `requireAdmin`; delega o `cancel_at_period_end` à lib
+4. `src/lib/billing/subscription.ts` — atualização da assinatura Stripe (compartilhada com o autoatendimento)
+5. `src/app/api/billing/webhook/route.ts` — devolve o usuário a FREE quando o Stripe confirmar o fim
 
 ---
 

@@ -45,6 +45,7 @@ const PROTECTED_PATHS = [
   "/workouts",
   "/students",
   "/profile",
+  "/billing",
   "/admin",
 ];
 // Rotas de login/cadastro que redirecionam se já houver sessão
