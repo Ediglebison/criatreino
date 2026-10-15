@@ -10,6 +10,8 @@ export const maxDuration = 30;
  * Webhook do Stripe — sincroniza o plano do usuário.
  * Assinatura verificada com STRIPE_WEBHOOK_SECRET (aceita lista separada por
  * vírgula: endpoint clássico + destino v2); sem configuração → 503.
+ * Entregas do destino v2 (envelope "v2.core.event", ex.: ping) recebem
+ * ACK 200 após a assinatura — o processamento deles é etapa futura.
  *
  * Eventos tratados:
  * - checkout.session.completed → ativa o plano do metadata e grava customer/subscription
@@ -23,6 +25,15 @@ function resolvePlan(subscription: Stripe.Subscription): Plan | null {
   if (meta === "BASIC" || meta === "PRO" || meta === "ULTIMATE") return meta;
   const priceId = subscription.items?.data?.[0]?.price?.id;
   return priceId ? planForPriceId(priceId) : null;
+}
+
+// constructEvent valida a assinatura ANTES de recusar o envelope v2
+// (object "v2.core.event", contrato do SDK stripe@23): essa mensagem só
+// aparece quando o HMAC bateu com o secret candidato.
+function assinaturaV2Confirmada(error: unknown): boolean {
+  return (
+    error instanceof Error && error.message.includes("thin event notification")
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -52,7 +63,12 @@ export async function POST(request: NextRequest) {
       try {
         event = stripe.webhooks.constructEvent(payload, signature, candidate);
         break;
-      } catch {
+      } catch (error) {
+        // Assinatura VÁLIDA neste secret, mas o SDK rejeita o envelope v2
+        // (ping do destino de evento) — ACK sem processar.
+        if (assinaturaV2Confirmada(error)) {
+          return NextResponse.json({ received: true });
+        }
         // assinatura não bate com este secret → tenta o próximo
       }
     }

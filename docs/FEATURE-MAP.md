@@ -183,7 +183,7 @@ Eventos do Stripe ativam, trocam ou rebaixam `User.plan`.
 
 **Flow:**
 
-1. `src/app/api/billing/webhook/route.ts` — verifica a assinatura HMAC (secret único ou lista por vírgula)
+1. `src/app/api/billing/webhook/route.ts` — verifica a assinatura HMAC (secret único ou lista por vírgula); entregas do destino v2 (envelope `v2.core.event`, ex.: ping) recebem ACK 200 sem processamento
 2. `src/lib/billing/stripe.ts` — mapa preço → plano interno
 3. `src/lib/db.ts` — `User.plan` e ids de customer/assinatura atualizados por `updateMany`
 
