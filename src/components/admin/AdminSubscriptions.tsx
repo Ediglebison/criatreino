@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Alert, Badge, Button, Card } from "@/components/ui";
+import { capitalize, statusTone } from "@/components/billing/status";
+import { postSubscriptionAction } from "@/components/billing/subscription-action";
+import type { SubscriptionSummary } from "@/lib/billing/subscription";
 import { planTone } from "./badges";
 
 export type AdminSubscription = {
@@ -14,39 +17,13 @@ export type AdminSubscription = {
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   amountBRL: number | null;
-  live: {
-    status: string;
-    cancelAtPeriodEnd: boolean;
-    periodEnd: string | null;
-    priceId: string | null;
-  } | null;
+  live: SubscriptionSummary | null;
 };
 
 type Props = {
   items: AdminSubscription[];
   testMode: boolean;
 };
-
-function statusTone(status: string) {
-  switch (status) {
-    case "active":
-    case "trialing":
-      return "success";
-    case "past_due":
-    case "incomplete":
-    case "incomplete_expired":
-      return "warning";
-    case "canceled":
-    case "unpaid":
-      return "danger";
-    default:
-      return "outline";
-  }
-}
-
-function capitalize(value: string): string {
-  return value.charAt(0) + value.slice(1).toLowerCase();
-}
 
 /** Tabela de assinaturas com cancelamento/reativação no Stripe. */
 export function AdminSubscriptions({ items, testMode }: Props) {
@@ -69,19 +46,18 @@ export function AdminSubscriptions({ items, testMode }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/subscriptions/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: target.id, action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      const result = await postSubscriptionAction(
+        "/api/admin/subscriptions/cancel",
+        action,
+        { userId: target.id },
+      );
+      if (!result.ok) {
         setError(
-          data.error === "billingDisabled"
+          result.error === "billingDisabled"
             ? t("admin.subs.billingOff")
-            : data.error === "noSubscription"
+            : result.error === "noSubscription"
               ? t("admin.subs.noSub")
-              : data.error === "stripeError"
+              : result.error === "stripeError"
                 ? t("errors.internal")
                 : t("common.errorGeneric"),
         );
@@ -182,11 +158,11 @@ export function AdminSubscriptions({ items, testMode }: Props) {
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-600">
-                    {sub?.periodEnd
+                    {sub?.currentPeriodEnd
                       ? `${t("admin.subs.renews")} ${new Intl.DateTimeFormat(
                           undefined,
                           { dateStyle: "medium" },
-                        ).format(new Date(sub.periodEnd))}`
+                        ).format(new Date(sub.currentPeriodEnd))}`
                       : hasStripe
                         ? "—"
                         : t("admin.subs.noStripeData")}

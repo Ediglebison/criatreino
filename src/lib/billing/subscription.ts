@@ -1,24 +1,31 @@
-import type Stripe from "stripe";
 import { getStripe } from "./stripe";
 
 export type SubscriptionSummary = {
   status: string;
   cancelAtPeriodEnd: boolean;
   currentPeriodEnd: string | null; // ISO
+  priceId: string | null;
 };
 
 /**
- * Extrai o resumo que exibimos da assinatura de forma defensiva
- * (a API do Stripe muda entre versões — ver admin/subscriptions/page.tsx).
+ * Extrai o resumo que exibimos da assinatura de forma defensiva: a API do
+ * Stripe muda entre versões, então cada campo é lido com tolerância a ausência.
+ * É a fonte única do resumo — as telas self-service e admin compartilham este shape.
  */
-function summarizeSubscription(subscription: Stripe.Subscription): SubscriptionSummary {
-  const item = subscription.items.data[0];
-  const legacy = subscription as unknown as { current_period_end?: number };
-  const periodEnd = item?.current_period_end ?? legacy.current_period_end ?? null;
+export function summarizeSubscription(subscription: unknown): SubscriptionSummary {
+  const sub = subscription as Record<string, unknown>;
+  const items = sub.items as { data?: Record<string, unknown>[] } | undefined;
+  const item = items?.data?.[0];
+  const price = item?.price as { id?: string } | undefined;
+  const periodEnd =
+    (item?.current_period_end as number | undefined) ??
+    (sub.current_period_end as number | undefined) ??
+    null;
   return {
-    status: subscription.status,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    status: String(sub.status ?? "unknown"),
+    cancelAtPeriodEnd: sub.cancel_at_period_end === true,
     currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+    priceId: typeof price?.id === "string" ? price.id : null,
   };
 }
 

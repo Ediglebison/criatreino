@@ -11,34 +11,13 @@ import {
   PLAN_PRICE_BRL,
   getPlanPricesFromStripe,
 } from "@/lib/billing/prices";
+import {
+  summarizeSubscription,
+  type SubscriptionSummary,
+} from "@/lib/billing/subscription";
 import { AdminSubscriptions, type AdminSubscription } from "@/components/admin/AdminSubscriptions";
 
 export const dynamic = "force-dynamic";
-
-type StripeSummary = {
-  status: string;
-  cancelAtPeriodEnd: boolean;
-  periodEnd: string | null;
-  priceId: string | null;
-};
-
-/** Extrai o que exibimos da assinatura de forma defensiva (API muda entre versões). */
-function summarizeSubscription(sub: unknown): StripeSummary {
-  const s = sub as Record<string, unknown>;
-  const items = s.items as { data?: Record<string, unknown>[] } | undefined;
-  const item = items?.data?.[0];
-  const price = item?.price as { id?: string } | undefined;
-  const periodEnd =
-    (item?.current_period_end as number | undefined) ??
-    (s.current_period_end as number | undefined) ??
-    null;
-  return {
-    status: String(s.status ?? "unknown"),
-    cancelAtPeriodEnd: s.cancel_at_period_end === true,
-    periodEnd: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
-    priceId: typeof price?.id === "string" ? price.id : null,
-  };
-}
 
 /**
  * Assinaturas: usuários em plano pago ou com customer/subscription do Stripe,
@@ -66,7 +45,7 @@ export default async function AdminSubscriptionsPage() {
   const stripe = on ? await getStripe() : null;
 
   // Status ao vivo de cada assinatura (melhor esforço; falha não derruba a tela).
-  const live = new Map<string, StripeSummary | null>();
+  const live = new Map<string, SubscriptionSummary | null>();
   if (stripe) {
     await Promise.all(
       users.map(async (user) => {

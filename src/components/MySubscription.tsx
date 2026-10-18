@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Alert, Badge, Button, Card, CardTitle } from "@/components/ui";
+import { capitalize, statusTone } from "@/components/billing/status";
+import { postSubscriptionAction } from "@/components/billing/subscription-action";
 
 export type MySubscriptionInfo = {
   status: string;
@@ -15,27 +17,6 @@ type Props = {
   subscription: MySubscriptionInfo | null;
   plan: string;
 };
-
-function statusTone(status: string) {
-  switch (status) {
-    case "active":
-    case "trialing":
-      return "success";
-    case "past_due":
-    case "incomplete":
-    case "incomplete_expired":
-      return "warning";
-    case "canceled":
-    case "unpaid":
-      return "danger";
-    default:
-      return "outline";
-  }
-}
-
-function capitalize(value: string): string {
-  return value.charAt(0) + value.slice(1).toLowerCase();
-}
 
 /**
  * Assinatura do próprio usuário: status ao vivo, cancelamento agendado e
@@ -56,19 +37,17 @@ export function MySubscription({ subscription, plan }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/billing/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      const result = await postSubscriptionAction(
+        "/api/billing/cancel",
+        action,
+      );
+      if (!result.ok) {
         setError(
-          data.error === "billingDisabled"
+          result.error === "billingDisabled"
             ? t("billing.billingDisabled")
-            : data.error === "noSubscription"
+            : result.error === "noSubscription"
               ? t("billing.noSubscription")
-              : data.error === "stripeError"
+              : result.error === "stripeError"
                 ? t("errors.internal")
                 : t("common.errorGeneric"),
         );
