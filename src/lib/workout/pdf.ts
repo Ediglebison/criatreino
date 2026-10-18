@@ -40,13 +40,88 @@ export type PdfInput = {
   days: DayRow[];
 };
 
-const INDIGO: [number, number, number] = [79, 70, 229];
-const INK: [number, number, number] = [30, 30, 35];
-const MUTED: [number, number, number] = [113, 113, 122];
+// Tokens do tema ember (globals.css) sobre papel claro.
+const EMBER_LIGHT: [number, number, number] = [251, 191, 36];
+const EMBER_MID: [number, number, number] = [245, 158, 11];
+const EMBER_DEEP: [number, number, number] = [234, 88, 12];
+const EMBER_MID_AT = 0.42;
+const INK: [number, number, number] = [20, 16, 11];
+const MUTED: [number, number, number] = [111, 96, 83];
+const BORDER: [number, number, number] = [231, 221, 208];
+const ROW_ALT: [number, number, number] = [246, 240, 231];
+const DANGER: [number, number, number] = [192, 66, 58];
 const MARGIN = 14;
+const HEADER_HEIGHT = 26;
 
 function fmtDate(date: Date, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
+}
+
+function emberColorAt(position: number): [number, number, number] {
+  const bounded = Math.min(Math.max(position, 0), 1);
+  const isFirstSegment = bounded < EMBER_MID_AT;
+  const segmentStartAt = isFirstSegment ? 0 : EMBER_MID_AT;
+  const segmentEndAt = isFirstSegment ? EMBER_MID_AT : 1;
+  const segmentFrom = isFirstSegment ? EMBER_LIGHT : EMBER_MID;
+  const segmentTo = isFirstSegment ? EMBER_MID : EMBER_DEEP;
+  const progress = (bounded - segmentStartAt) / (segmentEndAt - segmentStartAt);
+  return [
+    Math.round(segmentFrom[0] + (segmentTo[0] - segmentFrom[0]) * progress),
+    Math.round(segmentFrom[1] + (segmentTo[1] - segmentFrom[1]) * progress),
+    Math.round(segmentFrom[2] + (segmentTo[2] - segmentFrom[2]) * progress),
+  ];
+}
+
+// jsPDF não tem preenchimento em gradiente; tiras verticais emulam os 135deg do site.
+function fillEmberGradient(
+  doc: jsPDF,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): void {
+  const stripCount = 48;
+  const stripWidth = width / stripCount;
+  const gradientSpan = width + height;
+  // A sobreposição cobre o fio de antialiasing entre retângulos vizinhos.
+  const stripOverlap = 0.4;
+  for (let stripIndex = 0; stripIndex < stripCount; stripIndex++) {
+    const stripLeft = left + stripIndex * stripWidth;
+    const stripRight = left + (stripIndex + 1) * stripWidth;
+    const stripCenter = (stripLeft + stripRight) / 2 - left;
+    const position = (stripCenter + height / 2) / gradientSpan;
+    doc.setFillColor(...emberColorAt(position));
+    doc.rect(stripLeft, top, stripRight - stripLeft + stripOverlap, height, "F");
+  }
+}
+
+// Marca do logo: halter dos paths do Logo.tsx escalado para a caixa recebida.
+function drawBrandMark(
+  doc: jsPDF,
+  left: number,
+  top: number,
+  size: number,
+): void {
+  const unit = size / 24;
+  const point = (viewBoxX: number, viewBoxY: number): [number, number] => [
+    left + viewBoxX * unit,
+    top + viewBoxY * unit,
+  ];
+  const segments: Array<[[number, number], [number, number]]> = [
+    [[6.5, 6.5], [6.5, 17.5]],
+    [[3.5, 9], [3.5, 15]],
+    [[17.5, 6.5], [17.5, 17.5]],
+    [[20.5, 9], [20.5, 15]],
+    [[6.5, 12], [17.5, 12]],
+  ];
+  doc.setDrawColor(...INK);
+  doc.setLineWidth(2 * unit);
+  doc.setLineCap("round");
+  for (const segment of segments) {
+    const [startX, startY] = point(segment[0][0], segment[0][1]);
+    const [endX, endY] = point(segment[1][0], segment[1][1]);
+    doc.line(startX, startY, endX, endY);
+  }
 }
 
 export function buildWorkoutPdf(input: PdfInput): jsPDF {
@@ -59,9 +134,15 @@ export function buildWorkoutPdf(input: PdfInput): jsPDF {
   const label = (key: keyof typeof m) => m[key] as string;
 
   // ---------------- Cabeçalho ----------------
-  doc.setFillColor(...INDIGO);
-  doc.rect(0, 0, pageWidth, 26, "F");
-  doc.setTextColor(255, 255, 255);
+  fillEmberGradient(doc, 0, 0, pageWidth, HEADER_HEIGHT);
+  const brandMarkSize = 10;
+  drawBrandMark(
+    doc,
+    pageWidth - MARGIN - brandMarkSize,
+    (HEADER_HEIGHT - brandMarkSize) / 2,
+    brandMarkSize,
+  );
+  doc.setTextColor(...INK);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.text(t.common.appName, MARGIN, 12);
@@ -132,12 +213,12 @@ export function buildWorkoutPdf(input: PdfInput): jsPDF {
         fontSize: 9,
         cellPadding: 1.8,
         textColor: INK,
-        lineColor: [228, 228, 231],
+        lineColor: BORDER,
         lineWidth: 0.1,
       },
       headStyles: {
-        fillColor: INDIGO,
-        textColor: [255, 255, 255],
+        fillColor: EMBER_LIGHT,
+        textColor: INK,
         fontStyle: "bold",
       },
       columnStyles: {
@@ -160,7 +241,10 @@ export function buildWorkoutPdf(input: PdfInput): jsPDF {
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
-    doc.setTextColor(...INDIGO);
+    const dayChipLabel = day.label.split(" — ")[0];
+    const dayChipWidth = doc.getTextWidth(dayChipLabel) + 6;
+    fillEmberGradient(doc, MARGIN - 3, startY - 5, dayChipWidth, 7);
+    doc.setTextColor(...INK);
     doc.text(day.label, MARGIN, startY);
     if (day.focus) {
       doc.setFont("helvetica", "normal");
@@ -181,29 +265,34 @@ export function buildWorkoutPdf(input: PdfInput): jsPDF {
           t.workout.table.notes,
         ],
       ],
-      body: day.exercises.map((ex) => [
-        `${ex.order}. ${ex.name}${ex.warning ? `\n(!) ${ex.warning}` : ""}`,
-        String(ex.sets),
-        ex.reps,
-        ex.restSeconds != null ? String(ex.restSeconds) : m.none,
-        [ex.tempo, ex.notes].filter(Boolean).join(" · ") || m.none,
-      ]),
+      body: day.exercises.map((ex) => {
+        const nameCell = `${ex.order}. ${ex.name}${ex.warning ? `\n(!) ${ex.warning}` : ""}`;
+        return [
+          ex.warning
+            ? { content: nameCell, styles: { textColor: DANGER } }
+            : nameCell,
+          String(ex.sets),
+          ex.reps,
+          ex.restSeconds != null ? String(ex.restSeconds) : m.none,
+          [ex.tempo, ex.notes].filter(Boolean).join(" · ") || m.none,
+        ];
+      }),
       theme: "striped",
       styles: {
         font: "helvetica",
         fontSize: 9,
         cellPadding: 1.8,
         textColor: INK,
-        lineColor: [228, 228, 231],
+        lineColor: BORDER,
         lineWidth: 0.1,
         overflow: "linebreak",
       },
       headStyles: {
-        fillColor: INDIGO,
-        textColor: [255, 255, 255],
+        fillColor: EMBER_LIGHT,
+        textColor: INK,
         fontStyle: "bold",
       },
-      alternateRowStyles: { fillColor: [248, 248, 250] },
+      alternateRowStyles: { fillColor: ROW_ALT },
       columnStyles: {
         0: { cellWidth: 78 },
         1: { cellWidth: 14, halign: "center" },
