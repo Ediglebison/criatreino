@@ -472,7 +472,7 @@
     "billingDisabled": "Payments are unavailable right now.",
     "quotaNotice": "{remaining} of {limit} generations left this month.",
     "quotaOut": "Monthly limit reached. Upgrade to generate more workouts.",
-    "success": "Subscription active! Enjoy your new plan.",
+    "success": "Upgrade requested! Your new plan will be applied in moments, once Stripe confirms.",
     "cancelled": "Checkout canceled — you're still on the free plan.",
     "checkout": "Subscribe",
     "perMonth": "/month",

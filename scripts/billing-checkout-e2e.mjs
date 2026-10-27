@@ -178,6 +178,8 @@ async function main() {
     subPro.items.data[0].price.id === PRICE.PRO,
     `price=${subPro.items.data[0].price.id}`,
   );
+  // Espelha o webhook — plano só muda quando o Stripe confirmar.
+  await client.query(`UPDATE "User" SET plan='PRO' WHERE id=$1`, [userId]);
   const st2 = await req("/api/billing/status", { cookie });
   check(
     "status: PRO + limite 100",
@@ -197,6 +199,8 @@ async function main() {
     up2.status === 200 && subFinal.items.data[0].price.id === PRICE.ULTIMATE,
     `status=${up2.status} price=${subFinal.items.data[0].price.id}`,
   );
+  // Espelha o webhook — plano só muda quando o Stripe confirmar.
+  await client.query(`UPDATE "User" SET plan='ULTIMATE' WHERE id=$1`, [userId]);
   const st3 = await req("/api/billing/status", { cookie });
   check(
     "status: ULTIMATE + limite 500",

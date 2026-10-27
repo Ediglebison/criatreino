@@ -74,9 +74,10 @@ export function BillingCard({ quota, checkoutEnabled, plans }: Props) {
         return;
       }
       if (res.ok && data.updated) {
-        // Upgrade de assinatura ativa: aplicado na hora, sem redirecionar.
+        // Upgrade de assinatura ativa: o plano só muda quando o webhook do
+        // Stripe confirmar — recarrega após 3s para a UI já refletir o plano.
         setMessage({ tone: "success", text: t("success") });
-        window.location.reload();
+        window.setTimeout(() => window.location.reload(), 3000);
         return;
       }
       if (!res.ok || !data.url) {

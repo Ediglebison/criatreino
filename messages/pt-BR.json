@@ -472,7 +472,7 @@
     "billingDisabled": "Pagamento indisponível no momento.",
     "quotaNotice": "Restam {remaining} de {limit} gerações este mês.",
     "quotaOut": "Limite mensal atingido. Faça upgrade para gerar mais treinos.",
-    "success": "Assinatura ativada! Aproveite seu novo plano.",
+    "success": "Upgrade solicitado! Seu novo plano será aplicado em instantes, quando o Stripe confirmar.",
     "cancelled": "Checkout cancelado — você continua no plano grátis.",
     "checkout": "Assinar",
     "perMonth": "/mês",

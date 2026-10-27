@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { hashPassword } from "@/lib/auth/password";
+import { dummyPasswordCompare, hashPassword } from "@/lib/auth/password";
 import { setSessionCookie } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { clientIp, consume, tooManyRequests } from "@/lib/rate-limit";
@@ -43,6 +43,9 @@ export async function POST(request: Request) {
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
+      // Gasta o mesmo custo bcrypt de um cadastro novo para não revelar
+      // se o e-mail já está em uso.
+      await dummyPasswordCompare();
       return NextResponse.json({ error: "emailTaken" }, { status: 409 });
     }
 

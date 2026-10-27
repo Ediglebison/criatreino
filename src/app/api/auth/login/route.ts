@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { verifyPassword } from "@/lib/auth/password";
+import {
+  dummyPasswordCompare,
+  hashPassword,
+  passwordNeedsRehash,
+  verifyPassword,
+} from "@/lib/auth/password";
 import { setSessionCookie } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import {
@@ -54,6 +59,12 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.findUnique({ where: { email } });
 
+    if (!user) {
+      // Gasta o mesmo custo bcrypt de um login real para não revelar
+      // se o e-mail existe.
+      await dummyPasswordCompare();
+    }
+
     const valid =
       !!user && (await verifyPassword(parsed.data.password, user.passwordHash));
 
@@ -69,6 +80,22 @@ export async function POST(request: Request) {
       refund(ipKey, IP_WINDOW_S),
       refund(accountKey, ACCOUNT_WINDOW_S),
     ]);
+
+    // Migra o hash em custo antigo. O rehash é conforto, não requisito:
+    // a falha loga e o login segue. Escrita via CAS — só grava se o hash
+    // não mudou desde a leitura, para não reverter um `reset` concorrente
+    // (count === 0 é esperado e segue silencioso).
+    if (passwordNeedsRehash(user.passwordHash)) {
+      try {
+        const rehashedPassword = await hashPassword(parsed.data.password);
+        await prisma.user.updateMany({
+          where: { id: user.id, passwordHash: user.passwordHash },
+          data: { passwordHash: rehashedPassword },
+        });
+      } catch (error) {
+        console.error("[login] RehashFailed", error);
+      }
+    }
 
     await setSessionCookie({
       id: user.id,

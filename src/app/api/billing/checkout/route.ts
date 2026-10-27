@@ -20,7 +20,7 @@ type PaidPlan = "BASIC" | "PRO" | "ULTIMATE";
  * - sem assinatura Stripe (FREE ou plano manual do admin) → cria uma sessão
  *   de Checkout do Stripe (assinatura mensal);
  * - assinante real → troca o preço da assinatura existente (upgrade/downgrade
- *   com prorata) e já grava o plano; o webhook do Stripe reconcilia.
+ *   com prorata); só o webhook do Stripe grava o plano.
  *
  * Requer STRIPE_SECRET_KEY + STRIPE_PRICE_ID_<PLANO>; sem isso responde
  * 503 e a UI esconde os planos.
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
           proration_behavior: "create_prorations",
           metadata: { userId: user.id, plan },
         });
-        // Aplica já na UI; o webhook (quando ativo) reconcilia depois.
-        await prisma.user.update({ where: { id: user.id }, data: { plan } });
+        // O plano muda só quando o webhook entrega
+        // customer.subscription.updated.
         return NextResponse.json({ updated: true, plan });
       } catch (error) {
         console.error("[billing:checkout] troca de plano", error);
