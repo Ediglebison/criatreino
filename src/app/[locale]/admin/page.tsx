@@ -1,7 +1,9 @@
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Badge, Card, CardTitle } from "@/components/ui";
 import { planTone, roleTone } from "@/components/admin/badges";
 import { Link } from "@/i18n/navigation";
+import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { currentPeriodStart, type Plan } from "@/lib/billing/limits";
 import {
@@ -32,6 +34,14 @@ export default async function AdminOverviewPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  // Guard por página (defense-in-depth): o fallthrough de /api/<path> cai aqui
+  // com locale="api" e o guard do layout só redireciona a UI — dados já
+  // serializadas no flight stream vazariam. Nada pode ser buscado antes desta
+  // checagem (getTranslations/prisma/stripe).
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (session.role !== "ADMIN") redirect("/dashboard");
+
   const { locale } = await params;
   const t = await getTranslations();
 

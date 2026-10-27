@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { currentPeriodStart } from "@/lib/billing/limits";
 import { getMonthlyLimits } from "@/lib/billing/settings";
@@ -13,7 +14,14 @@ export const dynamic = "force-dynamic";
  * lib billing/quota.ts (COMPLETED + PENDING fresco).
  */
 export default async function AdminUsersPage() {
+  // Guard por página (defense-in-depth): o fallthrough de /api/<path> cai aqui
+  // com locale="api" e o guard do layout só redireciona a UI — dados já
+  // serializadas no flight stream vazariam. Nada pode ser buscado antes desta
+  // checagem (prisma).
   const session = await getSession();
+  if (!session) redirect("/login");
+  if (session.role !== "ADMIN") redirect("/dashboard");
+
   const monthStart = currentPeriodStart();
 
   const [users, usage, limits] = await Promise.all([
@@ -67,5 +75,5 @@ export default async function AdminUsersPage() {
     used: usedBy.get(user.id) ?? 0,
   }));
 
-  return <AdminUsers users={items} limits={limits} meId={session?.id ?? ""} />;
+  return <AdminUsers users={items} limits={limits} meId={session.id} />;
 }

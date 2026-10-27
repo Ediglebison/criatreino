@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Alert, Badge, Card, CardTitle } from "@/components/ui";
+import { getSession } from "@/lib/auth/session";
 import { getLimitConfigs } from "@/lib/billing/settings";
 import { PAID_PLANS } from "@/lib/billing/limits";
 import {
@@ -16,6 +18,14 @@ export const dynamic = "force-dynamic";
 
 /** Configurações: limites de cota editáveis + estado do billing (só leitura). */
 export default async function AdminSettingsPage() {
+  // Guard por página (defense-in-depth): o fallthrough de /api/<path> cai aqui
+  // com locale="api" e o guard do layout só redireciona a UI — dados já
+  // serializadas no flight stream vazariam. Nada pode ser buscado antes desta
+  // checagem (getTranslations).
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (session.role !== "ADMIN") redirect("/dashboard");
+
   const t = await getTranslations();
 
   const configs = await getLimitConfigs();

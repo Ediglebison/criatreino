@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Alert, Card } from "@/components/ui";
+import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import {
   billingEnabled,
@@ -24,6 +26,14 @@ export const dynamic = "force-dynamic";
  * com status ao vivo quando o Stripe está configurado.
  */
 export default async function AdminSubscriptionsPage() {
+  // Guard por página (defense-in-depth): o fallthrough de /api/<path> cai aqui
+  // com locale="api" e o guard do layout só redireciona a UI — dados já
+  // serializadas no flight stream vazariam. Nada pode ser buscado antes desta
+  // checagem (getTranslations/prisma/stripe).
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (session.role !== "ADMIN") redirect("/dashboard");
+
   const t = await getTranslations();
 
   const users = await prisma.user.findMany({
