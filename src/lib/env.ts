@@ -7,6 +7,8 @@
  * evidente no log de inicialização.
  */
 
+import { billingEnabled, webhookEnabled } from "@/lib/billing/stripe";
+
 type EnvCheck = {
   name: string;
   required: boolean;
@@ -69,6 +71,15 @@ export function validateEnv(): void {
   if (hasSmtpPass && !hasSmtpUser) {
     console.warn(
       "[env] SMTP_PASS presente sem SMTP_USER — a autenticação falharia no primeiro envio (defina SMTP_USER, ex.: sua conta Gmail)",
+    );
+  }
+
+  // Desde o fix do pentest (F05), o checkout cobra e o plano só é aplicado
+  // pelo webhook. Sem STRIPE_WEBHOOK_SECRET o upgrade cobraria sem ativar
+  // o plano do comprador — visível só no primeiro pagamento.
+  if (billingEnabled() && !webhookEnabled()) {
+    console.warn(
+      "[env] Stripe configurado sem STRIPE_WEBHOOK_SECRET — upgrades cobram mas o plano nunca é aplicado (configure o endpoint /api/billing/webhook no Stripe)",
     );
   }
 
